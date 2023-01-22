@@ -89,14 +89,14 @@ public class RandomMT19937
 		}
 	}
 
-	/* generates a random number on [0,0xffffffff]-interval */
+	// generates a random number on [0,0xffffffff]-interval
 	private uint InternalSample()
 	{
 		uint y;
 
 		if (mti >= N)
 		{
-			/* generate N words at one time */
+			// generate N words at one time
 			int kk;
 
 			for (kk = 0; kk < N - M; kk++)
@@ -117,7 +117,7 @@ public class RandomMT19937
 
 		y = mt[mti++];
 
-		/* Tempering */
+		// Tempering
 		y ^= (y >> 11);
 		y ^= (y << 7) & 0x9d2c5680U;
 		y ^= (y << 15) & 0xefc60000U;
@@ -169,16 +169,16 @@ public class RandomMT19937
 		}
 	}
 
-	/* generates a random number on [0,1)-real-interval */
+	// generates a random number on [0,1)-real-interval
 	public virtual double NextDouble()
 	{
 		return this.Sample();
 	}
 
-	/* generates a random number on [0,1)-real-interval */
+	// generates a random number on [0,1)-real-interval
 	protected virtual double Sample()
 	{
-		return (this.InternalSample() * 2.3283064365386962890625e-10);
 		// (1.0 / 4294967296.0) = 2.3283064365386962890625e-10
+		return (this.InternalSample() * 2.3283064365386962890625e-10);
 	}
 }
