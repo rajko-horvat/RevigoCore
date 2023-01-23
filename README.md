@@ -1,4 +1,7 @@
-﻿## About REVIGO (REduce + VIsualize Gene Ontology) project
+﻿## Repository description
+<p>This is the main REVIGO Core library that implements the whole clustering algorithm and visualizations.</p>
+
+## About REVIGO (REduce + VIsualize Gene Ontology) project
 <p>Outcomes of high-throughput biological experiments are typically interpreted by statistical testing
 for enriched gene functional categories defined by the Gene Ontology (GO). The resulting lists of GO terms 
 may be large and highly redundant, and thus difficult to interpret.<p>
@@ -15,5 +18,3 @@ such as the neighbor joining approach.</p>
 
 <p align="center"><img src="Flowchart.png" alt="Flowchart of the algorithm" style="width:577px; height:789px;" /><br/>
 <i>A flowchart of the simplified algorithm to reduce redundancy.</i></p>
-
-<p>This is the main REVIGO Core library that implements the whole clustering algorithm and visualizations.</p>
