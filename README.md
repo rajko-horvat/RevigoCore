@@ -1,11 +1,11 @@
-﻿<title>About REVIGO (REduce + VIsualize Gene Ontology) project</title>
+﻿## About REVIGO (REduce + VIsualize Gene Ontology) project
 <p>Outcomes of high-throughput biological experiments are typically interpreted by statistical testing
 for enriched gene functional categories defined by the Gene Ontology (GO). The resulting lists of GO terms 
 may be large and highly redundant, and thus difficult to interpret.<p>
-<p>REVIGO is a successful attempt to summarize long, unintelligible lists of Gene Ontology terms by finding a representative subset 
+<p>REVIGO is a successful project to summarize long, unintelligible lists of Gene Ontology terms by finding a representative subset 
 of the terms using a simple clustering algorithm that relies on semantic similarity measures.</p>
 
-<title>Algorithm to reduce redundancy within lists of GO terms</title>
+## Algorithm to reduce redundancy within lists of GO terms
 <p>Researchers analyzing annotations of gene products are often faced with long lists of GO terms 
 that are either close in the GO hierarchy (sibling terms) or are related by inheritance (child and parent terms). 
 These redundant lists are difficult to interpret, but are likely to contain clusters of semantically similar GO terms.</p>
