@@ -20,7 +20,7 @@ namespace IRB.Collections.Generic
 	/// 	and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
 	/// 	subject to the following conditions: 
 	/// 	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-	/// 	The names of authors and contributors may not be used to endorse or promote products derived from this software 
+	/// 	The names of authors and contributors may not be used to endorse or promote Software products derived from this software 
 	/// 	without specific prior written permission.
 	/// 	
 	/// 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
