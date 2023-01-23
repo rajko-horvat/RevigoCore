@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Runtime.InteropServices;
 
 /// <summary>
@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 /// 
 /// License:
 /// 	MIT
-/// 	Copyright (c) 2011-2023, Ruðer Boškoviæ Institute
+/// 	Copyright (c) 2011-2023, RuÄ‘er BoÅ¡koviÄ‡ Institute
 ///		
 /// 	Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
 /// 	and associated documentation files (the "Software"), to deal in the Software without restriction, 
