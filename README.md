@@ -7,7 +7,8 @@ for enriched gene functional categories defined by the Gene Ontology (GO). The r
 may be large and highly redundant, and thus difficult to interpret.<p>
 <p>REVIGO is a successful project to summarize long, unintelligible lists of Gene Ontology terms by finding a representative subset 
 of the terms using a simple clustering algorithm that relies on semantic similarity measures.</p>
-
+<p>For any further information about REVIGO project please see 
+<a href="https://dx.doi.org/10.1371/journal.pone.0021800" target="_blank">Our paper</a></p>
 ## Algorithm to reduce redundancy within lists of GO terms
 <p>Researchers analyzing annotations of gene products are often faced with long lists of GO terms 
 that are either close in the GO hierarchy (sibling terms) or are related by inheritance (child and parent terms). 
@@ -18,6 +19,3 @@ such as the neighbor joining approach.</p>
 
 <p align="center"><img src="Flowchart.png" alt="Flowchart of the algorithm" style="width:577px; height:789px;" /><br/>
 <i>A flowchart of the simplified algorithm to reduce redundancy.</i></p>
-
-<p>For any further information about REVIGO project please see 
-<a href="https://dx.doi.org/10.1371/journal.pone.0021800" target="_blank">Our paper</a></p>
