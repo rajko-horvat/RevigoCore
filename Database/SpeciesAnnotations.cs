@@ -1,22 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
-using System.Text;
-using System.Xml.Serialization;
 using IRB.Collections.Generic;
-using System.Globalization;
 
-namespace IRB.Database
+namespace IRB.Revigo.Database
 {
 	/// <summary>
 	/// A class holding annotations for a species.
 	/// 
-	/// Authors: Fran Supek (fsupek at irb.hr)
-	///          Rajko Horvat (rhorvat at irb.hr)
+	/// Authors:
+	///		Fran Supek (fsupek at irb.hr)
+	///		Rajko Horvat (rhorvat at irb.hr)
 	/// 
-	/// License: MIT
-	///		Copyright (c) 2021 Ruđer Bošković Institute
+	/// License:
+	///		MIT
+	///		Copyright (c) 2011-2023, Ruđer Bošković Institute
 	///		
 	/// 	Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
 	/// 	and associated documentation files (the "Software"), to deal in the Software without restriction, 
@@ -24,6 +21,8 @@ namespace IRB.Database
 	/// 	and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
 	/// 	subject to the following conditions: 
 	/// 	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+	/// 	The names of authors and contributors may not be used to endorse or promote products derived from this software 
+	/// 	without specific prior written permission.
 	/// 	
 	///		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
 	///		INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 

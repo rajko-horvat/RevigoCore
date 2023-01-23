@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
-namespace IRB.Revigo.Core
+namespace IRB.Revigo
 {
 	/// <summary>
 	/// 
@@ -12,7 +9,7 @@ namespace IRB.Revigo.Core
 	/// 
 	/// License:
 	///		MIT
-	///		Copyright (c) 2011-2023, Ruđer Bošković Institute
+	///		Copyright (c) 2021, Ruđer Bošković Institute
 	///		
 	/// 	Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
 	/// 	and associated documentation files (the "Software"), to deal in the Software without restriction, 
@@ -30,10 +27,61 @@ namespace IRB.Revigo.Core
 	///		DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
 	///		ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	/// </summary>
-	public enum RequestSourceEnum
+	public static class Utilities
 	{
-		WebPage,
-		RestfulAPI,
-		JubSubmitting
+		public static int[] QuickSort(double[] values)
+		{
+			int[] index = new int[values.Length];
+
+			for (int i = 0; i < index.Length; i++)
+			{
+				index[i] = i;
+			}
+			QuickSortInternal(ref values, ref index, 0, values.Length - 1);
+
+			return index;
+		}
+
+		private static void QuickSortInternal(ref double[] values, ref int[] index, int left, int right)
+		{
+			if (left < right)
+			{
+				int middle = partition(ref values, ref index, left, right);
+				QuickSortInternal(ref values, ref index, left, middle);
+				QuickSortInternal(ref values, ref index, middle + 1, right);
+			}
+		}
+
+		private static int partition(ref double[] values, ref int[] index, int left, int right)
+		{
+			double pivot = values[index[(left + right) / 2]];
+			int tmp;
+
+			while (left < right)
+			{
+				while ((values[index[left]] < pivot) && (left < right))
+				{
+					left++;
+				}
+				while ((values[index[right]] > pivot) && (left < right))
+				{
+					right--;
+				}
+				if (left < right)
+				{
+					tmp = index[left];
+					index[left] = index[right];
+					index[right] = tmp;
+					left++;
+					right--;
+				}
+			}
+			if ((left == right) && (values[index[right]] > pivot))
+			{
+				right--;
+			}
+
+			return right;
+		}
 	}
 }

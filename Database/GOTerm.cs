@@ -4,7 +4,7 @@ using System.Text;
 using System.Xml.Serialization;
 using IRB.Collections.Generic;
 
-namespace IRB.Database
+namespace IRB.Revigo.Database
 {
 	/// <summary>
 	/// Class representing a single Gene Ontology term.
@@ -16,11 +16,13 @@ namespace IRB.Database
 	/// 
 	/// The GOTerm may have zero, one or many parent nodes.
 	/// 
-	/// Authors: Fran Supek (fsupek at irb.hr)
-	///          Rajko Horvat (rhorvat at irb.hr)
+	/// Authors:
+	///		Fran Supek (fsupek at irb.hr)
+	///		Rajko Horvat (rhorvat at irb.hr)
 	/// 
-	/// License: MIT
-	///		Copyright (c) 2021 Ruđer Bošković Institute
+	/// License:
+	///		MIT
+	///		Copyright (c) 2011-2023, Ruđer Bošković Institute
 	///		
 	/// 	Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
 	/// 	and associated documentation files (the "Software"), to deal in the Software without restriction, 
@@ -28,6 +30,8 @@ namespace IRB.Database
 	/// 	and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
 	/// 	subject to the following conditions: 
 	/// 	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+	/// 	The names of authors and contributors may not be used to endorse or promote products derived from this software 
+	/// 	without specific prior written permission.
 	/// 	
 	///		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
 	///		INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
@@ -48,9 +52,9 @@ namespace IRB.Database
 		private string sComment = null;
 		private bool bObsolete = false;
 		// For obsolete terms, here is a suitable replacement. (Note: just one 
-		// replacement term is stored here while the OBO-XML file may offer more than one.
+		// replacement term is stored here while the OBO-XML file may offer to more than one)
 		private int iReplaceByID = -1;
-		private GoNamespaceEnum eNamespace; // The namespace this term belongs to.
+		private GONamespaceEnum eNamespace; // The namespace this term belongs to.
 		private BHashSet<string> aKeywords = null;
 
 		private BHashSet<int> aParentIDs = new BHashSet<int>(); // A list of all parent IDs of the node.
@@ -110,7 +114,7 @@ namespace IRB.Database
 			}
 		}
 
-		public GoNamespaceEnum Namespace
+		public GONamespaceEnum Namespace
 		{
 			get
 			{

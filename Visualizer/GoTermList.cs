@@ -1,11 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using IRB.Collections.Generic;
-using IRB.Database;
+using IRB.Revigo.Database;
 
-namespace IRB.Visualizer
+namespace IRB.Revigo.Visualizer
 {
+	/// <summary>
+	/// 
+	/// Authors:
+	///		Fran Supek (fsupek at irb.hr)
+	///		Rajko Horvat (rhorvat at irb.hr)
+	/// 
+	/// License:
+	///		MIT
+	///		Copyright (c) 2011-2023, Ruđer Bošković Institute
+	///		
+	/// 	Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
+	/// 	and associated documentation files (the "Software"), to deal in the Software without restriction, 
+	/// 	including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+	/// 	and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+	/// 	subject to the following conditions: 
+	/// 	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+	/// 	The names of authors and contributors may not be used to endorse or promote products derived from this software 
+	/// 	without specific prior written permission.
+	/// 	
+	///		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+	///		INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+	///		FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+	///		IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
+	///		DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
+	///		ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	/// </summary>
 	public class GOTermList : List<GOTerm>
 	{
 		public GOTermList()
@@ -63,91 +88,6 @@ namespace IRB.Visualizer
 			// update this collection
 			this.Clear();
 			this.AddRange(aResultList);
-
-			/*// now, reconstruct the whole chain, who gets dispensed by whom
-			BDictionary<GOTerm, GOTerm> dispensedBy = new BDictionary<GOTerm, GOTerm>();
-			foreach (GOTerm term in this)
-			{
-				int disp = termProperties.GetValueByKey(term.ID).DispensedBy;
-				if (disp >= 0)
-					dispensedBy.Add(term, ontology.GetValueByKey(disp));
-			}
-
-			List<GOTerm> oRepresentatives = new List<GOTerm>(aResultList);
-			List<GOTerm> oDispensed = new List<GOTerm>();
-
-			// now determine the representatives using the last two arrays
-			foreach (GOTerm term in this)
-			{
-				if (!aResultList.Contains(term))
-				{
-					GOTerm myTerm = term;  // first, the term tries to represent itself
-					oDispensed.Add(term);
-					while (!aResultList.Contains(myTerm))
-					{
-						if (!dispensedBy.ContainsKey(myTerm))
-						{
-							// this term has no representative among representatives, add it to representatives
-							//throw new Exception("Can't find term representative");
-							myTerm = null;
-							break;
-						}
-						myTerm = dispensedBy.GetValueByKey(myTerm);
-					}
-					if (myTerm != null)
-					{
-						termProperties.GetValueByKey(term.ID).Representative = myTerm.ID;
-					}
-					else
-					{
-						oRepresentatives.Add(term);
-						oDispensed.Remove(term);
-					}
-				}
-			}
-
-			// sort representatives and dispensed separately
-			oRepresentatives.Sort(new SortRepresentatives(termProperties));
-			oDispensed.Sort(new SortDispensed(termProperties));
-
-			// insert dispensed into representatives
-			int iRepresentative = -1;
-			int iPosition = -1;
-			for (int i = 0; i < oDispensed.Count; i++)
-			{
-				GOTerm term = oDispensed[i];
-				int iTermRepresentative = termProperties.GetValueByKey(term.ID).Representative;
-
-				if (iRepresentative != iTermRepresentative)
-				{
-					iRepresentative = iTermRepresentative;
-
-					iPosition = -1;
-					for (int j = 0; j < oRepresentatives.Count; j++)
-					{
-						if (oRepresentatives[j].ID == iRepresentative)
-						{
-							iPosition = j + 1;
-							break;
-						}
-					}
-					if (iPosition < 0)
-						throw new Exception("Can't find representative " + iRepresentative.ToString());
-				}
-				if (iPosition >= oRepresentatives.Count)
-				{
-					oRepresentatives.Add(term);
-				}
-				else
-				{
-					oRepresentatives.Insert(iPosition, term);
-				}
-				iPosition++;
-			}
-
-			// update this collection
-			this.Clear();
-			this.AddRange(oRepresentatives);*/
 		}
 
 		private int AddChildrenRecursive(List<GOTerm> resultList, int parentIndex, int parentID, int representativeID,

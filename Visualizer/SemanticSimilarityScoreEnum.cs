@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace IRB.Revigo.Core
+﻿namespace IRB.Revigo.Visualizer
 {
 	/// <summary>
 	/// 
 	/// Authors:
+	///		Fran Supek (fsupek at irb.hr)
 	///		Rajko Horvat (rhorvat at irb.hr)
 	/// 
 	/// License:
@@ -30,10 +26,11 @@ namespace IRB.Revigo.Core
 	///		DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
 	///		ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	/// </summary>
-	public enum RequestSourceEnum
+	public enum SemanticSimilarityScoreEnum
 	{
-		WebPage,
-		RestfulAPI,
-		JubSubmitting
+		SIMREL = 2,
+		LIN = 3,
+		RESNIK = 4,
+		JIANG = 5
 	}
 }

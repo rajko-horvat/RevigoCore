@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.IO;
-using System.Text;
 using IRB.Collections.Generic;
-using IRB.Database;
-using IRB.Revigo;
+using IRB.Revigo.Core;
+using IRB.Revigo.Database;
 
-namespace IRB.Visualizer
+namespace IRB.Revigo.Visualizer
 {
 	/// <summary>
 	/// Takes a list of GO terms and prepares them for visualization in 1-, 2- or 3-
@@ -39,7 +36,7 @@ namespace IRB.Visualizer
 	public class TermListVisualizer
 	{
 		private RevigoWorker oParent = null;
-		private GoNamespaceEnum eNamespace;
+		private GONamespaceEnum eNamespace;
 
 		private GOTerm[] aTerms;
 		private GOTermProperties[] aProperties;
@@ -85,7 +82,7 @@ namespace IRB.Visualizer
 		/// header in output arff files, and in reporting of errors. Optional.</param>
 		/// <param name="orgsInTotal">I don't remember what this was for; it isn't used for
 		/// any calculations, it is just output as-is to Weka Instances.</param>
-		public TermListVisualizer(RevigoWorker parent, GoNamespaceEnum goNamespace,
+		public TermListVisualizer(RevigoWorker parent, GONamespaceEnum goNamespace,
 			GOTerm[] terms, BDictionary<int, GOTermProperties> properties, ProgressEventHandler progressHandler)
 		{
 			this.oParent = parent;
@@ -135,7 +132,7 @@ namespace IRB.Visualizer
 			}
 		}
 
-		public GoNamespaceEnum Namespace
+		public GONamespaceEnum Namespace
 		{
 			get
 			{

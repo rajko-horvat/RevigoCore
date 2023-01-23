@@ -1,18 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
-namespace IRB.Revigo.Core
+namespace IRB.Collections.Generic
 {
 	/// <summary>
+	/// Implementation of serializable Key-Value pair class
 	/// 
 	/// Authors:
 	///		Rajko Horvat (rhorvat at irb.hr)
 	/// 
 	/// License:
 	///		MIT
-	///		Copyright (c) 2011-2023, Ruđer Bošković Institute
+	///		Copyright (c) 2021, Ruđer Bošković Institute
 	///		
 	/// 	Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
 	/// 	and associated documentation files (the "Software"), to deal in the Software without restriction, 
@@ -30,10 +29,59 @@ namespace IRB.Revigo.Core
 	///		DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
 	///		ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	/// </summary>
-	public enum RequestSourceEnum
+	[Serializable]
+	public struct BKeyValuePair<TKey, TValue>
 	{
-		WebPage,
-		RestfulAPI,
-		JubSubmitting
+		private TKey key;
+		private TValue value;
+
+		public BKeyValuePair(TKey key, TValue value)
+		{
+			this.key = key;
+			this.value = value;
+		}
+
+		public TKey Key
+		{
+			get
+			{
+				return this.key;
+			}
+			set
+			{
+				this.key = value;
+			}
+		}
+
+		public TValue Value
+		{
+			get
+			{
+				return this.value;
+			}
+			set
+			{
+				this.value = value;
+			}
+		}
+
+		public override string ToString()
+		{
+			StringBuilder builder = new StringBuilder();
+
+			builder.Append('[');
+			if (this.key != null)
+			{
+				builder.Append(this.key.ToString());
+			}
+			builder.Append(", ");
+			if (this.value != null)
+			{
+				builder.Append(this.value.ToString());
+			}
+			builder.Append(']');
+
+			return builder.ToString();
+		}
 	}
 }

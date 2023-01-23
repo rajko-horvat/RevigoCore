@@ -1,20 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Xml.Serialization;
 using IRB.Collections.Generic;
-using System.IO;
-using System.Globalization;
-using IRB.Visualizer;
+using IRB.Revigo.Visualizer;
 
-namespace IRB.Database
+namespace IRB.Revigo.Database
 {
 	/// <summary>
-	/// Authors: Fran Supek (fsupek at irb.hr)
-	///          Rajko Horvat (rhorvat at irb.hr)
+	/// A class that holds Word Annotations from Gene Ontology
 	/// 
-	/// License: MIT
-	///		Copyright (c) 2021 Ruđer Bošković Institute
+	/// Authors:
+	///		Fran Supek (fsupek at irb.hr)
+	///		Rajko Horvat (rhorvat at irb.hr)
+	/// 
+	/// License:
+	///		MIT
+	///		Copyright (c) 2011-2023, Ruđer Bošković Institute
 	///		
 	/// 	Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
 	/// 	and associated documentation files (the "Software"), to deal in the Software without restriction, 
@@ -22,6 +22,8 @@ namespace IRB.Database
 	/// 	and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
 	/// 	subject to the following conditions: 
 	/// 	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+	/// 	The names of authors and contributors may not be used to endorse or promote products derived from this software 
+	/// 	without specific prior written permission.
 	/// 	
 	///		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
 	///		INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
@@ -182,7 +184,7 @@ namespace IRB.Database
 
 			// sort by values - ascending order, smallest first
 			// and larger values of the GoTermPropery are better, by definition
-			int[] sortedIndices = QuickSort(vals);
+			int[] sortedIndices = Utilities.QuickSort(vals);
 
 			// now go through the key-value pairs in the sorted order, and compute for
 			// each word:
@@ -211,8 +213,7 @@ namespace IRB.Database
 				}
 			}
 
-			// okay, now convert the sum of ranks to 2*AUC (which is the result of
-			// this function)
+			// okay, now convert the sum of ranks to 2*AUC (which is the result of this function)
 			for (int i = 0; i < this.Count; i++)
 			{
 				string word = this[i].Key;
@@ -366,61 +367,6 @@ namespace IRB.Database
 			}
 
 			return result1;
-		}
-
-		public static int[] QuickSort(double[] values)
-		{
-			int[] index = new int[values.Length];
-
-			for (int i = 0; i < index.Length; i++)
-			{
-				index[i] = i;
-			}
-			QuickSortInternal(ref values, ref index, 0, values.Length - 1);
-
-			return index;
-		}
-
-		private static void QuickSortInternal(ref double[] values, ref int[] index, int left, int right)
-		{
-			if (left < right)
-			{
-				int middle = partition(ref values, ref index, left, right);
-				QuickSortInternal(ref values, ref index, left, middle);
-				QuickSortInternal(ref values, ref index, middle + 1, right);
-			}
-		}
-
-		private static int partition(ref double[] values, ref int[] index, int left, int right)
-		{
-			double pivot = values[index[(left + right) / 2]];
-			int tmp;
-
-			while (left < right)
-			{
-				while ((values[index[left]] < pivot) && (left < right))
-				{
-					left++;
-				}
-				while ((values[index[right]] > pivot) && (left < right))
-				{
-					right--;
-				}
-				if (left < right)
-				{
-					tmp = index[left];
-					index[left] = index[right];
-					index[right] = tmp;
-					left++;
-					right--;
-				}
-			}
-			if ((left == right) && (values[index[right]] > pivot))
-			{
-				right--;
-			}
-
-			return right;
 		}
 	}
 }

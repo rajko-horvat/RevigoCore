@@ -2,35 +2,24 @@
 using System.Text;
 using System.IO.Compression;
 using System.IO;
-using System.Xml.Serialization;
 using IRB.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Web;
 using System.Collections.Generic;
 using System.Globalization;
 
-namespace IRB.Database
+namespace IRB.Revigo.Database
 {
-	/// <summary> 
-	/// The enum that specifies to which namespace the GO term belongs
-	/// </summary>
-	public enum GoNamespaceEnum
-	{
-		None = 0,
-		BIOLOGICAL_PROCESS = 1,
-		CELLULAR_COMPONENT = 2,
-		MOLECULAR_FUNCTION = 3,
-		MIXED_NAMESPACE = 4
-	}
-
 	/// <summary>
 	/// A class representing the Gene Ontology.
 	/// 
-	/// Authors: Fran Supek (fsupek at irb.hr)
-	///          Rajko Horvat (rhorvat at irb.hr)
+	/// Authors:
+	///		Fran Supek (fsupek at irb.hr)
+	///		Rajko Horvat (rhorvat at irb.hr)
 	/// 
-	/// License: MIT
-	///		Copyright (c) 2021 Ruđer Bošković Institute
+	/// License:
+	///		MIT
+	///		Copyright (c) 2011-2023, Ruđer Bošković Institute
 	///		
 	/// 	Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
 	/// 	and associated documentation files (the "Software"), to deal in the Software without restriction, 
@@ -38,6 +27,8 @@ namespace IRB.Database
 	/// 	and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
 	/// 	subject to the following conditions: 
 	/// 	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+	/// 	The names of authors and contributors may not be used to endorse or promote products derived from this software 
+	/// 	without specific prior written permission.
 	/// 	
 	///		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
 	///		INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
@@ -254,9 +245,9 @@ namespace IRB.Database
 							}
 							break;
 						case "namespace":
-							if (oCurrentTerm.Namespace == GoNamespaceEnum.None)
+							if (oCurrentTerm.Namespace == GONamespaceEnum.None)
 							{
-								oCurrentTerm.Namespace = (GoNamespaceEnum)Enum.Parse(typeof(GoNamespaceEnum),
+								oCurrentTerm.Namespace = (GONamespaceEnum)Enum.Parse(typeof(GONamespaceEnum),
 									sItemValue, true);
 							}
 							break;
@@ -436,9 +427,9 @@ namespace IRB.Database
 									}
 									break;
 								case "namespace":
-									if (oCurrentTerm.Namespace == GoNamespaceEnum.None)
+									if (oCurrentTerm.Namespace == GONamespaceEnum.None)
 									{
-										oCurrentTerm.Namespace = (GoNamespaceEnum)Enum.Parse(typeof(GoNamespaceEnum),
+										oCurrentTerm.Namespace = (GONamespaceEnum)Enum.Parse(typeof(GONamespaceEnum),
 											sTagValue, true);
 									}
 									break;
@@ -546,7 +537,7 @@ namespace IRB.Database
 								if (!bInTerm)
 									throw new ArgumentException("The OBO-XML has mismatched term tags.");
 								bInTerm = false;
-								if (oCurrentTerm == null || oCurrentTerm.Name == null || oCurrentTerm.Namespace == GoNamespaceEnum.None)
+								if (oCurrentTerm == null || oCurrentTerm.Name == null || oCurrentTerm.Namespace == GONamespaceEnum.None)
 									throw new ArgumentException("The term has undefined ID, Name or Namespace in OBO-XML file.");
 								this.Add(oCurrentTerm.ID, oCurrentTerm);
 								oCurrentTerm = null;
@@ -708,7 +699,7 @@ namespace IRB.Database
 			}
 		}
 
-		public static string NamespaceToFriendlyString(GoNamespaceEnum name)
+		public static string NamespaceToFriendlyString(GONamespaceEnum name)
 		{
 			string friendlyName = name.ToString().Replace('_', ' ').Trim().ToLower();
 			int iPos = 0;

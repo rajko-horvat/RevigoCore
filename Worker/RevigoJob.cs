@@ -8,6 +8,7 @@ namespace IRB.Revigo.Core
 	/// <summary>
 	/// 
 	/// Authors:
+	///		Fran Supek (fsupek at irb.hr)
 	///		Rajko Horvat (rhorvat at irb.hr)
 	/// 
 	/// License:
@@ -30,10 +31,49 @@ namespace IRB.Revigo.Core
 	///		DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
 	///		ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	/// </summary>
-	public enum RequestSourceEnum
+	public class RevigoJob
 	{
-		WebPage,
-		RestfulAPI,
-		JubSubmitting
+		private int iID = -1;
+		private DateTime dtExpiration;
+		private RevigoWorker oWorker;
+
+		public RevigoJob(int id, DateTime expiration, RevigoWorker worker)
+		{
+			this.iID = id;
+			this.dtExpiration = expiration;
+			this.oWorker = worker;
+		}
+
+		public int ID
+		{
+			get
+			{
+				return this.iID;
+			}
+		}
+
+		public DateTime Expiration
+		{
+			get
+			{
+				return this.dtExpiration;
+			}
+		}
+
+		public RevigoWorker Worker
+		{
+			get
+			{
+				return this.oWorker;
+			}
+		}
+
+		public void ExtendExpiration(int minutes)
+		{
+			DateTime newExpiration = DateTime.Now.AddMinutes(minutes);
+
+			if (this.dtExpiration < newExpiration)
+				this.dtExpiration = newExpiration;
+		}
 	}
 }

@@ -3,24 +3,24 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
-using System.Text;
 using System.Xml.Serialization;
 using IRB.Collections.Generic;
 using System.Threading;
 
-namespace IRB.Database
+namespace IRB.Revigo.Database
 {
 	/// <summary>
 	/// A class holding a collection of annotations for all supported species.
 	/// 
 	/// This class is parallelized when constructing new species annotations.
 	/// 
-	/// Authors: Fran Supek (fsupek at irb.hr)
-	///          Rajko Horvat (rhorvat at irb.hr)
+	/// Authors:
+	///		Fran Supek (fsupek at irb.hr)
+	///		Rajko Horvat (rhorvat at irb.hr)
 	/// 
-	/// License: MIT
-	///		Copyright (c) 2021 Ruđer Bošković Institute
+	/// License:
+	///		MIT
+	///		Copyright (c) 2011-2023, Ruđer Bošković Institute
 	///		
 	/// 	Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
 	/// 	and associated documentation files (the "Software"), to deal in the Software without restriction, 
@@ -28,6 +28,8 @@ namespace IRB.Database
 	/// 	and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
 	/// 	subject to the following conditions: 
 	/// 	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+	/// 	The names of authors and contributors may not be used to endorse or promote products derived from this software 
+	/// 	without specific prior written permission.
 	/// 	
 	///		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
 	///		INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
@@ -80,22 +82,6 @@ namespace IRB.Database
 			}
 
 			StreamWriter log = new StreamWriter(string.Format("{0}{1}TermSizes.log", Path.GetDirectoryName(goaPath), Path.DirectorySeparatorChar));
-
-			/*FileStream goaStream = new FileStream(goaPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-			BufferedReader goaReader = new BufferedReader(goaStream);
-
-			FileStream goaStream1 = new FileStream(goaPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-			StreamReader goaReader1 = new StreamReader(goaStream1);
-
-			while (!goaReader1.EndOfStream)
-			{
-				string sLine = goaReader.ReadLine();
-				string sLine1 = goaReader1.ReadLine();
-
-				if (!sLine.Equals(sLine1))
-					Console.WriteLine(string.Format("Line '{0}' != '{1}'", sLine, sLine1));
-			}*/
-
 
 			#region Parse GOA Link
 			StreamReader linkReader = null;
@@ -376,26 +362,6 @@ namespace IRB.Database
 				}
 			}
 
-
-			/*SpeciesAnnotations terms = oSpeciesAnnotationsObjects.GetValueByKey(0);
-			for (int i = 0; i < terms.Annotations.Count; i++)
-			{
-				log.Write("{0}\t{1}\t{{", terms.Annotations[i].Key, terms.Annotations[i].Value);
-
-				BHashSet<int> parents = go.GetValueByKey(terms.Annotations[i].Key).AllParents;
-				int[] aiParents = parents.ToArray();
-				Array.Sort(aiParents);
-
-				for (int j = 0; j < aiParents.Length; j++)
-				{
-					if (j > 0)
-						log.Write(", ");
-					log.Write("{0}", aiParents[j]);
-				}
-
-				log.WriteLine("}");
-			}*/
-
 			for (int i = 0; i < taxonIDs.Length; i++)
 			{
 				if (oSpeciesAnnotationsObjects.ContainsKey(taxonIDs[i]))
@@ -415,7 +381,6 @@ namespace IRB.Database
 			string sSpeciesName = null;
 			bool bScientificName = false;
 
-			//FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
 			StreamReader ncbiReader = new StreamReader(path);
 
 			while (!ncbiReader.EndOfStream)
@@ -464,7 +429,6 @@ namespace IRB.Database
 			}
 
 			ncbiReader.Close();
-			//fileStream.Close();
 		}
 
 		private class GOABatchWorker

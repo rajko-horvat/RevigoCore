@@ -6,11 +6,37 @@ using System.Text;
 using System.Threading;
 using System.Timers;
 using IRB.Collections.Generic;
-using IRB.Database;
-using IRB.Visualizer;
+using IRB.Revigo.Database;
+using IRB.Revigo.Visualizer;
 
-namespace IRB.Revigo
+namespace IRB.Revigo.Core
 {
+	/// <summary>
+	/// 
+	/// Authors:
+	///		Fran Supek (fsupek at irb.hr)
+	///		Rajko Horvat (rhorvat at irb.hr)
+	/// 
+	/// License:
+	///		MIT
+	///		Copyright (c) 2011-2023, Ruđer Bošković Institute
+	///		
+	/// 	Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
+	/// 	and associated documentation files (the "Software"), to deal in the Software without restriction, 
+	/// 	including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+	/// 	and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+	/// 	subject to the following conditions: 
+	/// 	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+	/// 	The names of authors and contributors may not be used to endorse or promote products derived from this software 
+	/// 	without specific prior written permission.
+	/// 	
+	///		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+	///		INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+	///		FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+	///		IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
+	///		DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
+	///		ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	/// </summary>
 	public class RevigoWorker
 	{
 		private int iJobID = -1; // Job ID is used as unique Job ID for database updates
@@ -506,13 +532,13 @@ namespace IRB.Revigo
 					this.bRecalculateMixed = true;
 					switch (term.Namespace)
 					{
-						case GoNamespaceEnum.BIOLOGICAL_PROCESS:
+						case GONamespaceEnum.BIOLOGICAL_PROCESS:
 							this.bRecalculateBP = true;
 							break;
-						case GoNamespaceEnum.CELLULAR_COMPONENT:
+						case GONamespaceEnum.CELLULAR_COMPONENT:
 							this.bRecalculateCC = true;
 							break;
-						case GoNamespaceEnum.MOLECULAR_FUNCTION:
+						case GONamespaceEnum.MOLECULAR_FUNCTION:
 							this.bRecalculateMF = true;
 							break;
 					}
@@ -551,7 +577,7 @@ namespace IRB.Revigo
 			}
 		}
 
-		private GoNamespaceEnum eCurrentNamespace = GoNamespaceEnum.None;
+		private GONamespaceEnum eCurrentNamespace = GONamespaceEnum.None;
 
 		private void StartRevigo()
 		{
@@ -813,13 +839,13 @@ namespace IRB.Revigo
 						// And finally add term to appropriate namespace and to a common namespace
 						switch (oGOTerm.Namespace)
 						{
-							case GoNamespaceEnum.BIOLOGICAL_PROCESS:
+							case GONamespaceEnum.BIOLOGICAL_PROCESS:
 								this.oBPTerms.Add(oGOTerm);
 								break;
-							case GoNamespaceEnum.MOLECULAR_FUNCTION:
+							case GONamespaceEnum.MOLECULAR_FUNCTION:
 								this.oMFTerms.Add(oGOTerm);
 								break;
-							case GoNamespaceEnum.CELLULAR_COMPONENT:
+							case GONamespaceEnum.CELLULAR_COMPONENT:
 								this.oCCTerms.Add(oGOTerm);
 								break;
 						}
@@ -843,7 +869,7 @@ namespace IRB.Revigo
 					if (this.oBPTerms.Count > TermListVisualizer.MaxAllowedGOListSize)
 					{
 						this.aErrors.Add(string.Format(sHugeListTemplate, this.oBPTerms.Count,
-							GeneOntology.NamespaceToFriendlyString(GoNamespaceEnum.BIOLOGICAL_PROCESS), 
+							GeneOntology.NamespaceToFriendlyString(GONamespaceEnum.BIOLOGICAL_PROCESS), 
 							TermListVisualizer.MaxAllowedGOListSize));
 
 						return;
@@ -851,14 +877,14 @@ namespace IRB.Revigo
 					if (this.oMFTerms.Count > TermListVisualizer.MaxAllowedGOListSize)
 					{
 						this.aErrors.Add(string.Format(sHugeListTemplate, this.oMFTerms.Count,
-							GeneOntology.NamespaceToFriendlyString(GoNamespaceEnum.MOLECULAR_FUNCTION), TermListVisualizer.MaxAllowedGOListSize));
+							GeneOntology.NamespaceToFriendlyString(GONamespaceEnum.MOLECULAR_FUNCTION), TermListVisualizer.MaxAllowedGOListSize));
 
 						return;
 					}
 					if (this.oCCTerms.Count > TermListVisualizer.MaxAllowedGOListSize)
 					{
 						this.aErrors.Add(string.Format(sHugeListTemplate, this.oCCTerms.Count,
-							GeneOntology.NamespaceToFriendlyString(GoNamespaceEnum.CELLULAR_COMPONENT), 
+							GeneOntology.NamespaceToFriendlyString(GONamespaceEnum.CELLULAR_COMPONENT), 
 							TermListVisualizer.MaxAllowedGOListSize));
 
 						return;
@@ -889,8 +915,8 @@ namespace IRB.Revigo
 
 				if (this.bRecalculateBP)
 				{
-					this.eCurrentNamespace = GoNamespaceEnum.BIOLOGICAL_PROCESS;
-					this.oBPVisualizer = new TermListVisualizer(this, GoNamespaceEnum.BIOLOGICAL_PROCESS, this.oBPTerms.ToArray(),
+					this.eCurrentNamespace = GONamespaceEnum.BIOLOGICAL_PROCESS;
+					this.oBPVisualizer = new TermListVisualizer(this, GONamespaceEnum.BIOLOGICAL_PROCESS, this.oBPTerms.ToArray(),
 						this.oAllProperties, Visualizer_OnProgress);
 
 					if (this.oBPVisualizer.MDSError)
@@ -929,8 +955,8 @@ namespace IRB.Revigo
 
 				if (this.bRecalculateCC)
 				{
-					this.eCurrentNamespace = GoNamespaceEnum.CELLULAR_COMPONENT;
-					this.oCCVisualizer = new TermListVisualizer(this, GoNamespaceEnum.CELLULAR_COMPONENT, this.oCCTerms.ToArray(),
+					this.eCurrentNamespace = GONamespaceEnum.CELLULAR_COMPONENT;
+					this.oCCVisualizer = new TermListVisualizer(this, GONamespaceEnum.CELLULAR_COMPONENT, this.oCCTerms.ToArray(),
 						this.oAllProperties, Visualizer_OnProgress);
 
 					if (this.oCCVisualizer.MDSError)
@@ -969,8 +995,8 @@ namespace IRB.Revigo
 
 				if (this.bRecalculateMF)
 				{
-					this.eCurrentNamespace = GoNamespaceEnum.MOLECULAR_FUNCTION;
-					this.oMFVisualizer = new TermListVisualizer(this, GoNamespaceEnum.MOLECULAR_FUNCTION, this.oMFTerms.ToArray(),
+					this.eCurrentNamespace = GONamespaceEnum.MOLECULAR_FUNCTION;
+					this.oMFVisualizer = new TermListVisualizer(this, GONamespaceEnum.MOLECULAR_FUNCTION, this.oMFTerms.ToArray(),
 						this.oAllProperties, Visualizer_OnProgress);
 
 					if (this.oMFVisualizer.MDSError)
@@ -1010,7 +1036,7 @@ namespace IRB.Revigo
 				{
 					this.dProgress = this.dProgressPos = 95.0;
 					this.dProgressSlice = 4.0;
-					this.sProgressText = "Calculating data for " + GeneOntology.NamespaceToFriendlyString(GoNamespaceEnum.MIXED_NAMESPACE);
+					this.sProgressText = "Calculating data for " + GeneOntology.NamespaceToFriendlyString(GONamespaceEnum.MIXED_NAMESPACE);
 
 					GOTermWordCorpus corpus = new GOTermWordCorpus(this.oAllTerms, this.oOntology);
 					this.oEnrichments = corpus.calculateWordEnrichment(this.oAnnotations.WordCorpus, 70, 0);
@@ -1086,7 +1112,7 @@ namespace IRB.Revigo
 			{
 				StringBuilder sb = new StringBuilder();
 				sb.Append(e.Description);
-				if (this.eCurrentNamespace != GoNamespaceEnum.None)
+				if (this.eCurrentNamespace != GONamespaceEnum.None)
 				{
 					sb.AppendFormat(" for {0} namespace", GeneOntology.NamespaceToFriendlyString(this.eCurrentNamespace));
 				}
