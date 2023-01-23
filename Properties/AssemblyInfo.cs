@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("IRB")]
 [assembly: AssemblyProduct("RevigoCore")]
-[assembly: AssemblyCopyright("Copyright © 2011-2023, Rudjer Boskovic Institite")]
+[assembly: AssemblyCopyright("Copyright © 2011-2023, Ruđer Bošković Institite")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
