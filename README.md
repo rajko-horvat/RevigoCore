@@ -19,4 +19,5 @@ such as the neighbor joining approach.</p>
 <p align="center"><img src="Flowchart.png" alt="Flowchart of the algorithm" style="width:577px; height:789px;" /><br/>
 <i>A flowchart of the simplified algorithm to reduce redundancy.</i></p>
 
-<p>For any further information about REVIGO please see <a href="https://dx.doi.org/10.1371/journal.pone.0021800" target="_blank">Our paper</a></p>
+<p>For any further information about REVIGO project please see 
+<a href="https://dx.doi.org/10.1371/journal.pone.0021800" target="_blank">Our paper</a></p>
