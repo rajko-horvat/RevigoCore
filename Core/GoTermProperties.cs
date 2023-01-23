@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace IRB.Revigo.Visualizer
+namespace IRB.Revigo.Core
 {
 	/// <summary>
 	/// 

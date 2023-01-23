@@ -5,7 +5,7 @@ using IRB.Collections.Generic;
 using System.Globalization;
 using System.IO;
 
-namespace IRB.Revigo.Visualizer
+namespace IRB.Revigo.Core
 {
 	/// <summary>
 	/// 

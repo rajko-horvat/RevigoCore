@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using IRB.Collections.Generic;
-using IRB.Revigo.Visualizer;
+using IRB.Revigo.Core;
 
 namespace IRB.Revigo.Databases
 {

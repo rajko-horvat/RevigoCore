@@ -7,9 +7,9 @@ using System.Threading;
 using System.Timers;
 using IRB.Collections.Generic;
 using IRB.Revigo.Databases;
-using IRB.Revigo.Visualizer;
+using IRB.Revigo.Core;
 
-namespace IRB.Revigo.Core
+namespace IRB.Revigo.Worker
 {
 	/// <summary>
 	/// 

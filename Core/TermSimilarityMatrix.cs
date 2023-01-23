@@ -1,8 +1,8 @@
 ﻿using System;
 using IRB.Revigo.Databases;
-using IRB.Revigo.Core;
+using IRB.Revigo.Worker;
 
-namespace IRB.Revigo.Visualizer
+namespace IRB.Revigo.Core
 {
 	/// <summary>
 	/// 

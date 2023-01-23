@@ -1,4 +1,4 @@
-﻿namespace IRB.Revigo.Visualizer
+﻿namespace IRB.Revigo.Core
 {
 	/// <summary>
 	/// 

@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using IRB.Collections.Generic;
-using IRB.Revigo.Core;
+using IRB.Revigo.Worker;
 using IRB.Revigo.Databases;
 
-namespace IRB.Revigo.Visualizer
+namespace IRB.Revigo.Core
 {
 	/// <summary>
 	/// Takes a list of GO terms and prepares them for visualization in 1-, 2- or 3-

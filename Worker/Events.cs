@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace IRB.Revigo.Core
+namespace IRB.Revigo.Worker
 {
 	/// <summary>
 	/// 
