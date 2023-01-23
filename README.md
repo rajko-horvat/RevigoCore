@@ -9,6 +9,7 @@ may be large and highly redundant, and thus difficult to interpret.<p>
 of the terms using a simple clustering algorithm that relies on semantic similarity measures.</p>
 <p>For any further information about REVIGO project please see 
 <a href="https://dx.doi.org/10.1371/journal.pone.0021800" target="_blank">Our paper</a></p>
+
 ## Algorithm to reduce redundancy within lists of GO terms
 <p>Researchers analyzing annotations of gene products are often faced with long lists of GO terms 
 that are either close in the GO hierarchy (sibling terms) or are related by inheritance (child and parent terms). 
