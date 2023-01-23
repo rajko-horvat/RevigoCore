@@ -6,14 +6,14 @@ using System.Runtime.InteropServices;
 /// http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html
 /// 
 /// Authors:
-///		Takuji Nishimura and Makoto Matsumoto (m - mat @ math.sci.hiroshima - u.ac.jp(remove space))
-///		Rajko Horvat (C# version, rhorvat at irb.hr)
+/// 	Takuji Nishimura and Makoto Matsumoto (m - mat @ math.sci.hiroshima - u.ac.jp(remove space))
+/// 	Rajko Horvat (C# version, rhorvat at irb.hr)
 /// 
 /// License:
-///		MIT
-///		Copyright (c) 1997 - 2002, Makoto Matsumoto and Takuji Nishimura.
+/// 	MIT
+/// 	Copyright (c) 2021, Ruðer Boškoviæ Institute
 ///		
-///		Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
+/// 	Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
 /// 	and associated documentation files (the "Software"), to deal in the Software without restriction, 
 /// 	including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
 /// 	and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
@@ -21,14 +21,13 @@ using System.Runtime.InteropServices;
 /// 	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 /// 	The names of authors and contributors may not be used to endorse or promote products derived from this software 
 /// 	without specific prior written permission.
-///			
-///		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
-///		INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-///		FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-///		IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
-///		DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
-///		ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-///	
+/// 	
+/// 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+/// 	INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+/// 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+/// 	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
+/// 	DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
+/// 	ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /// </summary>
 [Serializable, ComVisible(true)]
 public class RandomMT19937
