@@ -11,9 +11,9 @@ that are either close in the GO hierarchy (sibling terms) or are related by inhe
 These redundant lists are difficult to interpret, but are likely to contain clusters of semantically similar GO terms.</p>
 <p>To mitigate the problem of large and redundant lists, we aim to find a single representative GO term for each of these clusters. 
 REVIGO performs a simple clustering procedure which is in concept similar to the hierarchical (agglomerative) clustering methods 
-such as the neighbor joining approach.<p>
+such as the neighbor joining approach.</p>
 
-<p style="text-align:center;"><img src="http://revigo.irb.hr/Images/Flowchart.tiff" alt="Flowchart of the algorithm" style="width:577px; height:789px;"/><br/>
+<p style="text-align:center;"><img src="Flowchart.tiff" alt="Flowchart of the algorithm" style="width:577px; height:789px;"/><br/>
 A flowchart of the simplified algorithm to reduce redundancy.</p>
 
 <p>This is main REVIGO Core library that implements the whole clusting algorithm and visualizations used in the web version.
