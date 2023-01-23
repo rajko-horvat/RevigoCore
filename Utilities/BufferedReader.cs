@@ -10,7 +10,7 @@ using System.Text;
 /// 
 /// License:
 /// 	MIT
-/// 	Copyright (c) 2021, Ruđer Bošković Institute
+/// 	Copyright (c) 2011-2023, Ruđer Bošković Institute
 ///		
 /// 	Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
 /// 	and associated documentation files (the "Software"), to deal in the Software without restriction, 
