@@ -8,7 +8,7 @@ using System.Web;
 using System.Collections.Generic;
 using System.Globalization;
 
-namespace IRB.Revigo.Database
+namespace IRB.Revigo.Databases
 {
 	/// <summary>
 	/// A class representing the Gene Ontology.

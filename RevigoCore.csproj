@@ -62,26 +62,26 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Database\GONamespaceEnum.cs" />
+    <Compile Include="Databases\GONamespaceEnum.cs" />
     <Compile Include="Utilities\BufferedReader.cs" />
     <Compile Include="Collections\Generic\BHashSet.cs" />
     <Compile Include="Collections\Generic\BKeyValuePair.cs" />
     <Compile Include="Collections\Generic\Trees\BTree.cs" />
     <Compile Include="Collections\Generic\Trees\BTreeNode.cs" />
-    <Compile Include="Database\SpeciesAnnotationsList.cs" />
+    <Compile Include="Databases\SpeciesAnnotationsList.cs" />
     <Compile Include="Utilities\Utilities.cs" />
     <Compile Include="Visualizer\SemanticSimilarityScoreEnum.cs" />
     <Compile Include="Worker\RevigoJob.cs" />
     <Compile Include="Visualizer\GoTermList.cs" />
-    <Compile Include="Database\GOTermWordCorpus.cs" />
+    <Compile Include="Databases\GOTermWordCorpus.cs" />
     <Compile Include="Visualizer\OntoloGraph.cs" />
     <Compile Include="Visualizer\TermListVisualizer.cs" />
     <Compile Include="Visualizer\TermSimilarityMatrix.cs" />
     <Compile Include="MDS\Utilities.cs" />
     <Compile Include="MDS\MDS.cs" />
-    <Compile Include="Database\GOTerm.cs" />
-    <Compile Include="Database\GeneOntology.cs" />
-    <Compile Include="Database\SpeciesAnnotations.cs" />
+    <Compile Include="Databases\GOTerm.cs" />
+    <Compile Include="Databases\GeneOntology.cs" />
+    <Compile Include="Databases\SpeciesAnnotations.cs" />
     <Compile Include="Visualizer\SemanticSimilarityScore.cs" />
     <Compile Include="Visualizer\GoTermProperties.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

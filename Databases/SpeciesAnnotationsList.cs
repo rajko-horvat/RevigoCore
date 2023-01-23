@@ -7,7 +7,7 @@ using System.Xml.Serialization;
 using IRB.Collections.Generic;
 using System.Threading;
 
-namespace IRB.Revigo.Database
+namespace IRB.Revigo.Databases
 {
 	/// <summary>
 	/// A class holding a collection of annotations for all supported species.

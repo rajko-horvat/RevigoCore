@@ -4,7 +4,7 @@ using System.Text;
 using System.Xml.Serialization;
 using IRB.Collections.Generic;
 
-namespace IRB.Revigo.Database
+namespace IRB.Revigo.Databases
 {
 	/// <summary>
 	/// Class representing a single Gene Ontology term.

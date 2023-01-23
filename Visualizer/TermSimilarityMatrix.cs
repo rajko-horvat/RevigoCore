@@ -1,5 +1,5 @@
 ﻿using System;
-using IRB.Revigo.Database;
+using IRB.Revigo.Databases;
 using IRB.Revigo.Core;
 
 namespace IRB.Revigo.Visualizer

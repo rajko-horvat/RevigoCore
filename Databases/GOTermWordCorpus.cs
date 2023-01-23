@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using IRB.Collections.Generic;
 using IRB.Revigo.Visualizer;
 
-namespace IRB.Revigo.Database
+namespace IRB.Revigo.Databases
 {
 	/// <summary>
 	/// A class that holds Word Annotations from Gene Ontology

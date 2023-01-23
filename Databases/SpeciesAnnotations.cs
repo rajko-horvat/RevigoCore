@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using IRB.Collections.Generic;
 
-namespace IRB.Revigo.Database
+namespace IRB.Revigo.Databases
 {
 	/// <summary>
 	/// A class holding annotations for a species.

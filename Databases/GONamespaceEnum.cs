@@ -1,4 +1,4 @@
-﻿namespace IRB.Revigo.Database
+﻿namespace IRB.Revigo.Databases
 {
 	/// <summary>
 	/// The enum that specifies to which namespace the GO term belongs

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using IRB.Collections.Generic;
 using IRB.Revigo.Core;
-using IRB.Revigo.Database;
+using IRB.Revigo.Databases;
 
 namespace IRB.Revigo.Visualizer
 {

@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Timers;
 using IRB.Collections.Generic;
-using IRB.Revigo.Database;
+using IRB.Revigo.Databases;
 using IRB.Revigo.Visualizer;
 
 namespace IRB.Revigo.Core

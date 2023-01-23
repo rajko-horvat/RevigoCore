@@ -1,6 +1,6 @@
 ﻿using System;
 using IRB.Collections.Generic;
-using IRB.Revigo.Database;
+using IRB.Revigo.Databases;
 
 namespace IRB.Revigo.Visualizer
 {
