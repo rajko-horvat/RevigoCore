@@ -14,7 +14,7 @@ REVIGO performs a simple clustering procedure which is in concept similar to the
 such as the neighbor joining approach.</p>
 
 <p align="center"><img src="Flowchart.png" alt="Flowchart of the algorithm" style="width:577px; height:789px;" /><br/>
-*A flowchart of the simplified algorithm to reduce redundancy.*</p>
+<i>A flowchart of the simplified algorithm to reduce redundancy.</i></p>
 
 <p>This is main REVIGO Core library that implements the whole clusting algorithm and visualizations used in the web version.
 It can be used to do offline calculations.</p>
