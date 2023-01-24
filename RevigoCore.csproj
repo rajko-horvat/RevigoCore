@@ -63,7 +63,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="LICENSE" />
-    <None Include="License.md" />
     <None Include="README.md" />
     <Compile Include="Databases\GONamespaceEnum.cs" />
     <Compile Include="Utilities\BufferedReader.cs" />

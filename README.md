@@ -8,7 +8,7 @@ may be large and highly redundant, and thus difficult to interpret.<p>
 <p>REVIGO is a successful project to summarize long, unintelligible lists of Gene Ontology terms by finding a representative subset 
 of the terms using a simple clustering algorithm that relies on semantic similarity measures.</p>
 <p>For any further information about REVIGO project please see our 
-<a href="https://dx.doi.org/10.1371/journal.pone.0021800" target="_blank">paper</a> and our 
+<a href="https://dx.doi.org/10.1371/journal.pone.0021800" target="_blank">published paper</a> and our 
 <a href="http://revigo.irb.hr/FAQ.aspx" target="_blank">Frequently Asked Questions page</a></p>
 
 ## Algorithm to reduce redundancy within lists of GO terms
