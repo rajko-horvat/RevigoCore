@@ -57,7 +57,7 @@ namespace IRB.Revigo.Databases
 		public GeneOntology(string goPath)
 		{
 			StreamReader linkReader = null;
-			string sLinkPath = string.Format("{0}{1}link.txt", Path.GetDirectoryName(goPath), Path.DirectorySeparatorChar);
+			string sLinkPath = string.Format("{0}.{1}link.txt", Path.GetDirectoryName(goPath), Path.DirectorySeparatorChar);
 			if (File.Exists(sLinkPath))
 			{
 				try
@@ -170,7 +170,7 @@ namespace IRB.Revigo.Databases
 				GOTerm top = this[i].Value.TopmostParent;
 			}
 
-			this.addKeywordsFromUniprotKeywords(string.Format("{0}{1}keywlist.txt",
+			this.addKeywordsFromUniprotKeywords(string.Format("{0}.{1}keywlist.txt",
 				Path.GetDirectoryName(goPath), Path.DirectorySeparatorChar));
 		}
 

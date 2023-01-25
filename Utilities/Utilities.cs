@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Globalization;
+using System.Text;
 
 namespace IRB.Revigo
 {
@@ -29,6 +31,74 @@ namespace IRB.Revigo
 	/// </summary>
 	public static class Utilities
 	{
+		public static string StringToJSON(string text)
+		{
+			StringBuilder result = new StringBuilder();
+
+			for (int i = 0; i < text.Length; i++)
+			{
+				char ch = text[i];
+				if (ch < '\x20')
+				{
+					switch (ch)
+					{
+						case '\b':
+							result.Append("\\b");
+							break;
+						case '\f':
+							result.Append("\\f");
+							break;
+						case '\n':
+							result.Append("\\n");
+							break;
+						case '\r':
+							result.Append("\\r");
+							break;
+						case '\t':
+							result.Append("\\t");
+							break;
+						default:
+							result.AppendFormat("\\u{0:x4}", (int)ch);
+							break;
+					}
+				}
+				else if (ch > '\xff')
+				{
+					result.AppendFormat("\\u{0:x4}", (int)ch);
+				}
+				else
+				{
+					switch (ch)
+					{
+						case '\"':
+							result.Append("\\\"");
+							break;
+						case '/':
+							result.Append("\\/");
+							break;
+						case '\\':
+							result.Append("\\\\");
+							break;
+						default:
+							result.Append(ch);
+							break;
+					}
+				}
+			}
+
+			return result.ToString();
+		}
+
+		public static string DoubleToJSON(double value)
+		{
+			if (double.IsNaN(value))
+			{
+				return "\"NaN\"";
+			}
+
+			return value.ToString(CultureInfo.InvariantCulture);
+		}
+
 		public static int[] QuickSort(double[] values)
 		{
 			int[] index = new int[values.Length];

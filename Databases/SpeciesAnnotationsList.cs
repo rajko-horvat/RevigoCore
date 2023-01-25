@@ -956,8 +956,11 @@ namespace IRB.Revigo.Databases
 			{
 				reader = new StreamReader(new BufferedStream(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read), 65536));
 			}
+			
+			SpeciesAnnotationsList oAnnotations = Deserialize(reader);
+			oAnnotations.SortByName();
 
-			return Deserialize(reader);
+			return oAnnotations;
 		}
 
 		/// <summary>
