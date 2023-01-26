@@ -106,7 +106,8 @@ namespace IRB.Revigo.Worker
 			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityScoreEnum measure, bool removeObsolete) :
 			this(-1, ontology, annotations, timeout, requestSource,
 			data, cutOff, valueType, measure, removeObsolete)
-		{ }
+		{
+		}
 
 		public RevigoWorker(int jobID, GeneOntology ontology, SpeciesAnnotations annotations, int timeout, RequestSourceEnum requestSource,
 			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityScoreEnum measure, bool removeObsolete)
