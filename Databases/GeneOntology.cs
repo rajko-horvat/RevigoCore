@@ -560,105 +560,108 @@ namespace IRB.Revigo.Databases
 		/// </summary>
 		private void addKeywordsFromUniprotKeywords(string fileName)
 		{
-			StreamReader file = new StreamReader(fileName);
-			StringBuilder curText = new StringBuilder();
-
-			while (!file.EndOfStream)
+			if (File.Exists(fileName))
 			{
-				string line = file.ReadLine();
+				StreamReader file = new StreamReader(fileName);
+				StringBuilder curText = new StringBuilder();
 
-				if (line.StartsWith("DE"))
+				while (!file.EndOfStream)
 				{
-					curText.Append(line.Substring(4));
-					if (!line.EndsWith("-") && !line.EndsWith(" "))
-						curText.Append(" ");
-					continue;
-				}
+					string line = file.ReadLine();
 
-				if (line.StartsWith("ID"))
-				{
-					curText.Append(line.Substring(4));
-					continue;
-				}
-
-				if (line.StartsWith("SY"))
-				{
-					curText.Append(line.Substring(4));
-					continue;
-				}
-
-				if (line.StartsWith("//"))
-				{
-					curText = new StringBuilder();
-					continue;
-				}
-
-				if (line.StartsWith("GO"))
-				{
-					int termId = Convert.ToInt32(line.Substring(8, 7));
-
-					BHashSet<string> newKeywords = new BHashSet<string>();
-
-					// old delimiters: ',', ':', '=', ';', '.', ' '
-					// some compounds have ',' in their name
-					string oneBigString = HttpUtility.HtmlDecode(curText.ToString()).ToLower().Replace(", ", " ");
-					string[] aTokens = oneBigString.Split(new char[] { ':', ';', '=', '.', '\"', '/', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-					for (int i = 0; i < aTokens.Length; i++)
+					if (line.StartsWith("DE"))
 					{
-						string token = aTokens[i];
-
-						// parenthesis removal
-						if (token.StartsWith("(") && token.EndsWith(")"))
-						{
-							token = token.Substring(1, token.Length - 2);
-						}
-						// remove starting parenthesis only if there is no ending parenthesis
-						if (token.StartsWith("(") && token.IndexOf(')') < 0)
-						{
-							token = token.Substring(1);
-						}
-						// remove ending parenthesis only if there is no starting parenthesis
-						if (token.EndsWith(")") && token.IndexOf('(') < 0)
-						{
-							token = token.Substring(0, token.Length - 1);
-						}
-
-						// square brackets removal
-						if (token.StartsWith("[") && token.EndsWith("]"))
-						{
-							token = token.Substring(1, token.Length - 2);
-						}
-						// remove starting square bracket only if there is no ending square bracket
-						if (token.StartsWith("[") && token.IndexOf(']') < 0)
-						{
-							token = token.Substring(1);
-						}
-						// remove ending square bracket only if there is no starting square bracket
-						if (token.EndsWith("]") && token.IndexOf('[') < 0)
-						{
-							token = token.Substring(0, token.Length - 1);
-						}
-
-						// the word "protein" is very overrepresented in Uniprot definitions
-						// we ignore tokens of 2 characters or less
-						if (!string.IsNullOrEmpty(token) && token.Length > 2 && !token.Equals("protein", StringComparison.CurrentCultureIgnoreCase))
-						{
-							newKeywords.Add(token);
-						}
+						curText.Append(line.Substring(4));
+						if (!line.EndsWith("-") && !line.EndsWith(" "))
+							curText.Append(" ");
+						continue;
 					}
 
-					foreach (string keyword in newKeywords)
+					if (line.StartsWith("ID"))
 					{
-						this.GetValueByKey(termId).Keywords.Add(keyword);
+						curText.Append(line.Substring(4));
+						continue;
 					}
 
-					curText = new StringBuilder();
-					continue;
+					if (line.StartsWith("SY"))
+					{
+						curText.Append(line.Substring(4));
+						continue;
+					}
+
+					if (line.StartsWith("//"))
+					{
+						curText = new StringBuilder();
+						continue;
+					}
+
+					if (line.StartsWith("GO"))
+					{
+						int termId = Convert.ToInt32(line.Substring(8, 7));
+
+						BHashSet<string> newKeywords = new BHashSet<string>();
+
+						// old delimiters: ',', ':', '=', ';', '.', ' '
+						// some compounds have ',' in their name
+						string oneBigString = HttpUtility.HtmlDecode(curText.ToString()).ToLower().Replace(", ", " ");
+						string[] aTokens = oneBigString.Split(new char[] { ':', ';', '=', '.', '\"', '/', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+						for (int i = 0; i < aTokens.Length; i++)
+						{
+							string token = aTokens[i];
+
+							// parenthesis removal
+							if (token.StartsWith("(") && token.EndsWith(")"))
+							{
+								token = token.Substring(1, token.Length - 2);
+							}
+							// remove starting parenthesis only if there is no ending parenthesis
+							if (token.StartsWith("(") && token.IndexOf(')') < 0)
+							{
+								token = token.Substring(1);
+							}
+							// remove ending parenthesis only if there is no starting parenthesis
+							if (token.EndsWith(")") && token.IndexOf('(') < 0)
+							{
+								token = token.Substring(0, token.Length - 1);
+							}
+
+							// square brackets removal
+							if (token.StartsWith("[") && token.EndsWith("]"))
+							{
+								token = token.Substring(1, token.Length - 2);
+							}
+							// remove starting square bracket only if there is no ending square bracket
+							if (token.StartsWith("[") && token.IndexOf(']') < 0)
+							{
+								token = token.Substring(1);
+							}
+							// remove ending square bracket only if there is no starting square bracket
+							if (token.EndsWith("]") && token.IndexOf('[') < 0)
+							{
+								token = token.Substring(0, token.Length - 1);
+							}
+
+							// the word "protein" is very overrepresented in Uniprot definitions
+							// we ignore tokens of 2 characters or less
+							if (!string.IsNullOrEmpty(token) && token.Length > 2 && !token.Equals("protein", StringComparison.CurrentCultureIgnoreCase))
+							{
+								newKeywords.Add(token);
+							}
+						}
+
+						foreach (string keyword in newKeywords)
+						{
+							this.GetValueByKey(termId).Keywords.Add(keyword);
+						}
+
+						curText = new StringBuilder();
+						continue;
+					}
 				}
+
+				file.Close();
 			}
-
-			file.Close();
 		}
 
 		private int ParseGOID(string value)
@@ -748,7 +751,6 @@ namespace IRB.Revigo.Databases
 			}
 
 			GeneOntology oOntology = Deserialize(reader);
-			oOntology.InitializeGO();
 
 			reader.Close();
 
@@ -764,6 +766,7 @@ namespace IRB.Revigo.Databases
 		{
 			XmlSerializer ser = new XmlSerializer(typeof(GeneOntology));
 			GeneOntology newObj = (GeneOntology)ser.Deserialize(reader);
+			newObj.InitializeGO();
 
 			return newObj;
 		}
