@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Web;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Xml.Serialization;
 
 namespace IRB.Revigo.Databases
 {
@@ -131,6 +132,14 @@ namespace IRB.Revigo.Databases
 				}
 			}
 
+			InitializeGO();
+
+			this.addKeywordsFromUniprotKeywords(string.Format("{0}.{1}keywlist.txt",
+				Path.GetDirectoryName(goPath), Path.DirectorySeparatorChar));
+		}
+
+		protected void InitializeGO()
+		{
 			// Assign parents and children to all GOTerms
 			for (int i = 0; i < this.Count; i++)
 			{
@@ -169,9 +178,6 @@ namespace IRB.Revigo.Databases
 				//BHashSet<int> parents = this[i].Value.AllParents;
 				GOTerm top = this[i].Value.TopmostParent;
 			}
-
-			this.addKeywordsFromUniprotKeywords(string.Format("{0}.{1}keywlist.txt",
-				Path.GetDirectoryName(goPath), Path.DirectorySeparatorChar));
 		}
 
 		private void ParseObo(StreamReader reader)
@@ -711,6 +717,97 @@ namespace IRB.Revigo.Databases
 			}
 
 			return friendlyName;
+		}
+
+		/// <summary>
+		/// Deserializes a GeneOntology object.
+		/// </summary>
+		/// <param name="path">A path to the Gene Ontology xml</param>
+		/// <returns>A deserialized GeneOntology object.</returns>
+		public static GeneOntology Deserialize(string path, bool gzipped)
+		{
+			return Deserialize(path + (gzipped ? ".gz" : ""));
+		}
+
+		/// <summary>
+		/// Deserializes a GeneOntology object.
+		/// Assumes file iz gzipped, if the filename ends with .gz
+		/// </summary>
+		/// <param name="path">A full path to a object xml file.</param>
+		/// <returns>A deserialized GeneOntology object.</returns>
+		public static GeneOntology Deserialize(string path)
+		{
+			StreamReader reader;
+			if (path.EndsWith(".gz"))
+			{
+				reader = new StreamReader(new GZipStream(new BufferedStream(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read), 65536), CompressionMode.Decompress));
+			}
+			else
+			{
+				reader = new StreamReader(new BufferedStream(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read), 65536));
+			}
+
+			GeneOntology oOntology = Deserialize(reader);
+			oOntology.InitializeGO();
+
+			reader.Close();
+
+			return oOntology;
+		}
+
+		/// <summary>
+		/// Deserializes a GeneOntology object.
+		/// </summary>
+		/// <param name="reader">A stream to read the object from.</param>
+		/// <returns>A deserialized GeneOntology object.</returns>
+		public static GeneOntology Deserialize(StreamReader reader)
+		{
+			XmlSerializer ser = new XmlSerializer(typeof(GeneOntology));
+			GeneOntology newObj = (GeneOntology)ser.Deserialize(reader);
+
+			return newObj;
+		}
+
+		/// <summary>
+		/// Serializes a GeneOntology object.
+		/// </summary>
+		/// <param name="path">Can be a path ending in "goa_yyyy_mm_dd"</param>
+		public void Serialize(string path, bool gzipped)
+		{
+			Serialize(path + (gzipped ? ".gz" : ""));
+		}
+
+		/// <summary>
+		/// Serializes a GeneOntology object.
+		/// Assumes file iz gzipped, if the filename ends with .gz
+		/// </summary>
+		/// <param name="filePath">A full path to a object xml file.</param>
+		public void Serialize(string filePath)
+		{
+			StreamWriter writer;
+			if (filePath.EndsWith(".gz"))
+			{
+				writer = new StreamWriter(new GZipStream(new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read), CompressionMode.Compress));
+			}
+			else
+			{
+				writer = new StreamWriter(new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read));
+			}
+
+			Serialize(writer);
+
+			writer.Flush();
+			writer.Close();
+		}
+
+		/// <summary>
+		/// Serializes a GeneOntology object.
+		/// </summary>
+		/// <param name="writer">A stream to serialize the object to.</param>
+		public void Serialize(StreamWriter writer)
+		{
+			XmlSerializer ser = new XmlSerializer(typeof(GeneOntology));
+			ser.Serialize(writer, this);
 		}
 	}
 }

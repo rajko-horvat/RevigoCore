@@ -960,6 +960,8 @@ namespace IRB.Revigo.Databases
 			SpeciesAnnotationsList oAnnotations = Deserialize(reader);
 			oAnnotations.SortByName();
 
+			reader.Close();
+
 			return oAnnotations;
 		}
 
@@ -1005,6 +1007,9 @@ namespace IRB.Revigo.Databases
 			}
 
 			Serialize(writer);
+
+			writer.Flush();
+			writer.Close();
 		}
 
 		/// <summary>

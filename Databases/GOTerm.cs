@@ -40,6 +40,7 @@ namespace IRB.Revigo.Databases
 	/// 	DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
 	/// 	ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	/// </summary>
+	[Serializable]
 	public class GOTerm : IComparable<GOTerm>, IComparer<GOTerm>, IEqualityComparer<GOTerm>
 	{
 		// The GeneOntology object this term belongs to.
@@ -66,6 +67,9 @@ namespace IRB.Revigo.Databases
 
 		private BHashSet<int> oAllParentsCached = null; // This speeds up all parents lookups
 		private GOTerm oTopmostCached = null; // This speeds up topmost parent lookups
+
+		public GOTerm()
+		{ }
 
 		/// <summary>
 		/// A unique ID (integer) must be specified for the GOTerm at the time of construction.
@@ -246,7 +250,6 @@ namespace IRB.Revigo.Databases
 		/// Provides a set of all words (in lowercase) used in any of the term names,
 		/// or in the term's definition.
 		/// </summary>
-		[XmlIgnore]
 		public BHashSet<string> Keywords
 		{
 			get
@@ -401,6 +404,7 @@ namespace IRB.Revigo.Databases
 		/// all of their parents and so on, searching recursively through the ontology.
 		/// </summary>
 		/// <returns></returns>
+		[XmlIgnore]
 		public BHashSet<int> AllParents
 		{
 			get
@@ -441,6 +445,7 @@ namespace IRB.Revigo.Databases
 		/// Finds the topmost parent of the given node (i.e. the one that has no parents.)
 		/// </summary>
 		/// <returns></returns>
+		[XmlIgnore]
 		public GOTerm TopmostParent
 		{
 			get
