@@ -55,7 +55,7 @@ namespace IRB.Revigo.Databases
 
 		public static SpeciesAnnotationsList FromGOA(string goaPath, string goPath, string ncbiPath, int[] taxonIDs)
 		{
-			return FromGOA(goaPath, goPath, ncbiPath, taxonIDs, Environment.ProcessorCount);
+			return FromGOA(goaPath, goPath, ncbiPath, taxonIDs, Math.Max(1, Environment.ProcessorCount));
 		}
 
 		/// <summary>
