@@ -53,6 +53,11 @@ namespace IRB.Revigo.Databases
 			this.aItems = new List<SpeciesAnnotations>(collection);
 		}
 
+		public static SpeciesAnnotationsList FromGOA(string goaPath, string goPath, string ncbiPath, int[] taxonIDs)
+		{
+			return FromGOA(goaPath, goPath, ncbiPath, taxonIDs, Environment.ProcessorCount);
+		}
+
 		/// <summary>
 		/// Makes serialized GoTermSizes objects for a number of model organisms
 		/// used in REVIGO. Starts from the "goa_uniprot_gcrp.gaf.gz" file
@@ -68,13 +73,13 @@ namespace IRB.Revigo.Databases
 		/// <param name="goPath">Path to the GeneOntology database</param>
 		/// <param name="ncbiPath">Path to the NCBI species database "names.dmp"</param>
 		/// <param name="taxonIDs">Array of taxon IDs of the organism to process</param>
-		public static SpeciesAnnotationsList FromGOA(string goaPath, string goPath, string ncbiPath, int[] taxonIDs)
+		/// <param name="cpuCount">CPU core count to be used. Be careful and don't exceed you physical CPU core count</param>
+		public static SpeciesAnnotationsList FromGOA(string goaPath, string goPath, string ncbiPath, int[] taxonIDs, int cpuCount)
 		{
 			SpeciesAnnotationsList result = new SpeciesAnnotationsList();
 
 			// in how many batches we will distribute this work (physical CPU count)
 			// take care if you have turned HyperThreading on!
-			int iCPUCount = Environment.ProcessorCount;
 
 			if (goaPath.EndsWith(".gz", StringComparison.CurrentCultureIgnoreCase))
 			{
@@ -121,7 +126,7 @@ namespace IRB.Revigo.Databases
 			#endregion
 
 			// process the GOA database
-			Console.WriteLine("Parsing GOA database with {0} CPU(s)", iCPUCount);
+			Console.WriteLine("Parsing GOA database with {0} CPU(s)", cpuCount);
 			dtStart = DateTime.Now;
 
 			// slice the goa input into batches
@@ -143,7 +148,7 @@ namespace IRB.Revigo.Databases
 
 			while (lGOAFilePosition < lGOAFileSize || aGOAWorkers.Count > 0)
 			{
-				while (aGOAWorkers.Count < iCPUCount && lGOAFileBatchPosition < lGOAFileSize)
+				while (aGOAWorkers.Count < cpuCount && lGOAFileBatchPosition < lGOAFileSize)
 				{
 					long lBatchStart = lGOAFileBatchPosition;
 					long lBatchEnd = lGOAFileBatchPosition + lGOABatchSize;
@@ -234,7 +239,7 @@ namespace IRB.Revigo.Databases
 			Console.WriteLine("Time: {0:hh\\:mm\\:ss}  \r", DateTime.Now - dtStart);
 
 			// distibute creation of SpeciesAnnotations objects in batches
-			Console.WriteLine("Creating species annotation objects with {0} CPU(s)", iCPUCount);
+			Console.WriteLine("Creating species annotation objects with {0} CPU(s)", cpuCount);
 			dtStart = DateTime.Now;
 
 			BDictionary<int, SpeciesAnnotations> oSpeciesAnnotationsObjects = new BDictionary<int, SpeciesAnnotations>();
@@ -250,7 +255,7 @@ namespace IRB.Revigo.Databases
 
 			while (iTaxonPosition < aSpeciesTaxons.Length || aSpeciesAnnotationsWorkers.Count > 0)
 			{
-				while (aSpeciesAnnotationsWorkers.Count < iCPUCount && iBatchTaxonPosition < aSpeciesTaxons.Length)
+				while (aSpeciesAnnotationsWorkers.Count < cpuCount && iBatchTaxonPosition < aSpeciesTaxons.Length)
 				{
 					int iTaxon = aSpeciesTaxons[iBatchTaxonPosition];
 					string sSpeciesName;
