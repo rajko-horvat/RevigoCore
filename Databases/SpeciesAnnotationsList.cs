@@ -958,7 +958,6 @@ namespace IRB.Revigo.Databases
 			}
 			
 			SpeciesAnnotationsList oAnnotations = Deserialize(reader);
-			oAnnotations.SortByName();
 
 			reader.Close();
 
@@ -974,6 +973,7 @@ namespace IRB.Revigo.Databases
 		{
 			XmlSerializer ser = new XmlSerializer(typeof(SpeciesAnnotationsList));
 			SpeciesAnnotationsList newObj = (SpeciesAnnotationsList)ser.Deserialize(reader);
+			newObj.SortByName(); 
 
 			return newObj;
 		}
