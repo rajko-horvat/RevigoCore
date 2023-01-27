@@ -973,7 +973,7 @@ namespace IRB.Revigo.Databases
 		{
 			XmlSerializer ser = new XmlSerializer(typeof(SpeciesAnnotationsList));
 			SpeciesAnnotationsList newObj = (SpeciesAnnotationsList)ser.Deserialize(reader);
-			newObj.SortByName(); 
+			newObj.SortByName();
 
 			return newObj;
 		}
