@@ -35,10 +35,10 @@ namespace IRB.Collections.Generic
 	public class BDictionary<TKey, TValue>
 		: IList<BKeyValuePair<TKey, TValue>>, ICollection<BKeyValuePair<TKey, TValue>>, IEnumerable<BKeyValuePair<TKey, TValue>>
 	{
-		protected List<BKeyValuePair<TKey, TValue>> aItems = null;
+		protected List<BKeyValuePair<TKey, TValue>> aItems;
 		private BTree oBTree = new BTree();
-		private KeyCollection oKeyCollection = null;
-		private ValueCollection oValueCollection = null;
+		private KeyCollection oKeyCollection;
+		private ValueCollection oValueCollection;
 
 		public BDictionary()
 		{
