@@ -10,6 +10,10 @@
     <PackageProjectUrl>https://github.com/rajko-horvat/RevigoCore</PackageProjectUrl>
     <AssemblyVersion>1.8.0</AssemblyVersion>
     <FileVersion>1.8.0</FileVersion>
+    <Version>1.8.0</Version>
+    <Company>IRB</Company>
+    <RepositoryUrl>https://github.com/rajko-horvat/RevigoCore</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
