@@ -39,10 +39,11 @@ namespace IRB.Revigo.Databases
 	/// 	ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	/// </summary>
 	[Serializable]
-	public class GeneOntology : BDictionary<int, GOTerm>
+	public class GeneOntology
 	{
 		// As given in the header of the OBO-XML file.
-		private DateTime dtDate = DateTime.MinValue;
+		private BDictionary<int, GOTerm> aTerms = new BDictionary<int, GOTerm>();
+        private DateTime dtDate = DateTime.MinValue;
 		private string sLink = null;
 
 		public GeneOntology()
@@ -105,29 +106,29 @@ namespace IRB.Revigo.Databases
 			goReader.Close();
 
 			// now, kill obsolete terms
-			for (int i = 0; i < this.Count; i++)
+			for (int i = 0; i < this.aTerms.Count; i++)
 			{
-				GOTerm curTerm = this[i].Value;
+				GOTerm curTerm = this.aTerms[i].Value;
 				if (curTerm.IsObsolete && curTerm.ReplacedByID > 0)
 				{
 					curTerm.ParentIDs.Clear();
 
-					GOTerm replTerm = this.GetValueByKey(curTerm.ReplacedByID);
+					GOTerm replTerm = this.aTerms.GetValueByKey(curTerm.ReplacedByID);
 					replTerm.AltIDs.Add(curTerm.ID);
 					replTerm.AltIDs.AddRange((IEnumerable<int>)curTerm.AltIDs);
 
 					// adjust references to replacement term
-					this.Add(curTerm.ID, replTerm);
+					this.aTerms.Add(curTerm.ID, replTerm);
 					for (int j = 0; j < curTerm.AltIDs.Count; j++)
 					{
-						this.Add(curTerm.AltIDs[j], replTerm);
+						this.aTerms.Add(curTerm.AltIDs[j], replTerm);
 					}
 				}
 				else
 				{
 					for (int j = 0; j < curTerm.AltIDs.Count; j++)
 					{
-						this.Add(curTerm.AltIDs[j], curTerm);
+						this.aTerms.Add(curTerm.AltIDs[j], curTerm);
 					}
 				}
 			}
@@ -141,14 +142,14 @@ namespace IRB.Revigo.Databases
 		protected void InitializeGO()
 		{
 			// Assign parents and children to all GOTerms
-			for (int i = 0; i < this.Count; i++)
+			for (int i = 0; i < this.aTerms.Count; i++)
 			{
-				GOTerm curTerm = this[i].Value;
+				GOTerm curTerm = this.aTerms[i].Value;
 
 				// A is a child of B, and B is a parent of A
 				for (int j = 0; j < curTerm.ParentIDs.Count; j++)
 				{
-					GOTerm parent = this.GetValueByKey(curTerm.ParentIDs[j]);
+					GOTerm parent = this.aTerms.GetValueByKey(curTerm.ParentIDs[j]);
 
 					curTerm.Parents.Add(parent);
 					parent.Children.Add(curTerm);
@@ -157,7 +158,7 @@ namespace IRB.Revigo.Databases
 				// A is a child of B, but B is not always a parent of A
 				for (int j = 0; j < curTerm.PartOfIDs.Count; j++)
 				{
-					GOTerm parent = this.GetValueByKey(curTerm.PartOfIDs[j]);
+					GOTerm parent = this.aTerms.GetValueByKey(curTerm.PartOfIDs[j]);
 
 					curTerm.Parents.Add(parent);
 				}
@@ -165,18 +166,18 @@ namespace IRB.Revigo.Databases
 				// A is a parent of B, but B is not always a child of A
 				for (int j = 0; j < curTerm.HasPartIDs.Count; j++)
 				{
-					GOTerm child = this.GetValueByKey(curTerm.HasPartIDs[j]);
+					GOTerm child = this.aTerms.GetValueByKey(curTerm.HasPartIDs[j]);
 
 					curTerm.Children.Add(child);
 				}
 			}
 
 			// Cache Keywords, AllParents, TopmostParent properties
-			for (int i = 0; i < this.Count; i++)
+			for (int i = 0; i < this.aTerms.Count; i++)
 			{
-				BHashSet<string> keyw = this[i].Value.Keywords;
+				BHashSet<string> keyw = this.aTerms[i].Value.Keywords;
 				//BHashSet<int> parents = this[i].Value.AllParents;
-				GOTerm top = this[i].Value.TopmostParent;
+				GOTerm top = this.aTerms[i].Value.TopmostParent;
 			}
 		}
 
@@ -376,7 +377,7 @@ namespace IRB.Revigo.Databases
 							bInTerm = true;
 							if (oCurrentTerm != null)
 							{
-								this.Add(oCurrentTerm.ID, oCurrentTerm);
+								this.aTerms.Add(oCurrentTerm.ID, oCurrentTerm);
 								oCurrentTerm = null;
 							}
 							break;
@@ -545,7 +546,7 @@ namespace IRB.Revigo.Databases
 								bInTerm = false;
 								if (oCurrentTerm == null || oCurrentTerm.Name == null || oCurrentTerm.Namespace == GONamespaceEnum.None)
 									throw new ArgumentException("The term has undefined ID, Name or Namespace in OBO-XML file.");
-								this.Add(oCurrentTerm.ID, oCurrentTerm);
+								this.aTerms.Add(oCurrentTerm.ID, oCurrentTerm);
 								oCurrentTerm = null;
 								break;
 						}
@@ -652,7 +653,7 @@ namespace IRB.Revigo.Databases
 
 						foreach (string keyword in newKeywords)
 						{
-							this.GetValueByKey(termId).Keywords.Add(keyword);
+							this.aTerms.GetValueByKey(termId).Keywords.Add(keyword);
 						}
 
 						curText = new StringBuilder();
@@ -708,7 +709,12 @@ namespace IRB.Revigo.Databases
 			}
 		}
 
-		public static string NamespaceToFriendlyString(GONamespaceEnum name)
+		public BDictionary<int, GOTerm> Terms
+		{
+			get { return this.aTerms; }
+		}
+
+        public static string NamespaceToFriendlyString(GONamespaceEnum name)
 		{
 			string friendlyName = name.ToString().Replace('_', ' ').Trim().ToLower();
 			int iPos = 0;

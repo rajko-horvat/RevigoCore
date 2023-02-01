@@ -40,7 +40,7 @@ namespace IRB.Revigo.Worker
 	public class RevigoWorker
 	{
 		private int iJobID = -1; // Job ID is used as unique Job ID for database updates
-		private int iDefaultTimeout = 20;
+		private TimeSpan tsDefaultTimeout = new TimeSpan(0, 20, 0);
 		private const int MaxNonEliminatedTerms = 300;
 
 		private GeneOntology oOntology = null;
@@ -102,20 +102,20 @@ namespace IRB.Revigo.Worker
 
 		public event EventHandler OnFinish = delegate { };
 
-		public RevigoWorker(GeneOntology ontology, SpeciesAnnotations annotations, int timeout, RequestSourceEnum requestSource,
+		public RevigoWorker(GeneOntology ontology, SpeciesAnnotations annotations, TimeSpan timeout, RequestSourceEnum requestSource,
 			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityScoreEnum measure, bool removeObsolete) :
 			this(-1, ontology, annotations, timeout, requestSource,
 			data, cutOff, valueType, measure, removeObsolete)
 		{
 		}
 
-		public RevigoWorker(int jobID, GeneOntology ontology, SpeciesAnnotations annotations, int timeout, RequestSourceEnum requestSource,
+		public RevigoWorker(int jobID, GeneOntology ontology, SpeciesAnnotations annotations, TimeSpan timeout, RequestSourceEnum requestSource,
 			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityScoreEnum measure, bool removeObsolete)
 		{
 			this.iJobID = jobID;
 			this.oOntology = ontology;
 			this.oAnnotations = annotations;
-			this.iDefaultTimeout = timeout;
+			this.tsDefaultTimeout = timeout;
 			this.eRequestSource = requestSource;
 			this.sData = data;
 			this.dCutOff = cutOff;
@@ -493,9 +493,9 @@ namespace IRB.Revigo.Worker
 
 		public bool ContainsTermID(int termID)
 		{
-			if (!this.bRunning && this.oOntology != null && this.oOntology.ContainsKey(termID))
+			if (!this.bRunning && this.oOntology != null && this.oOntology.Terms.ContainsKey(termID))
 			{
-				GOTerm term = this.oOntology.GetValueByKey(termID);
+				GOTerm term = this.oOntology.Terms.GetValueByKey(termID);
 				if (this.oAllTerms.Contains(term))
 				{
 					return true;
@@ -507,9 +507,9 @@ namespace IRB.Revigo.Worker
 
 		public void PinTerm(int termID)
 		{
-			if (!this.bRunning && this.oOntology != null && this.oOntology.ContainsKey(termID))
+			if (!this.bRunning && this.oOntology != null && this.oOntology.Terms.ContainsKey(termID))
 			{
-				GOTerm term = this.oOntology.GetValueByKey(termID);
+				GOTerm term = this.oOntology.Terms.GetValueByKey(termID);
 				if (this.oAllTerms.Contains(term))
 				{
 					GOTermProperties oProperties = this.oAllProperties.GetValueByKey(termID);
@@ -585,7 +585,7 @@ namespace IRB.Revigo.Worker
 			StreamWriter oLogWriter = null;
 
 			this.bRunning = true;
-			this.oWorkerTimer = new System.Timers.Timer(iDefaultTimeout * 60000); // minutes to milliseconds
+			this.oWorkerTimer = new System.Timers.Timer(tsDefaultTimeout.TotalMilliseconds);
 			this.oWorkerTimer.Elapsed += oWorkerTimer_Elapsed;
 			this.oWorkerTimer.AutoReset = false;
 			this.oWorkerTimer.Start();
@@ -593,7 +593,7 @@ namespace IRB.Revigo.Worker
 			this.tsExecutingTime = new TimeSpan(0);
 
 			// is Gene ontology object initialized?
-			if (this.oOntology == null || this.oOntology.Count == 0)
+			if (this.oOntology == null || this.oOntology.Terms.Count == 0)
 			{
 				this.aErrors.Add("The Gene Ontology is not initialized.");
 				this.aDevErrors.Add("The Gene Ontology is not initialized.");
@@ -664,9 +664,9 @@ namespace IRB.Revigo.Worker
 						}
 
 						GOTerm oGOTerm = null;
-						if (this.oOntology.ContainsKey(iGOID))
+						if (this.oOntology.Terms.ContainsKey(iGOID))
 						{
-							oGOTerm = this.oOntology.GetValueByKey(iGOID);
+							oGOTerm = this.oOntology.Terms.GetValueByKey(iGOID);
 						}
 						if (oGOTerm == null)
 						{

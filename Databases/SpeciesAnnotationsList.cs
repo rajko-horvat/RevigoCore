@@ -359,7 +359,7 @@ namespace IRB.Revigo.Databases
 
 				for (int j = 0; j < annotations.Count; j++)
 				{
-					GOTerm term = go.GetValueByKey(annotations[j].Key);
+					GOTerm term = go.Terms.GetValueByKey(annotations[j].Key);
 					if (term.IsObsolete)
 					{
 						log.WriteLine("{0}\t{1}\t{2}", iSpecies, term.FormattedID, annotations[j].Value);
@@ -668,10 +668,10 @@ namespace IRB.Revigo.Databases
 
 					iLastGOID = iGOID;
 
-					if (this.oOntology.ContainsKey(iGOID))
+					if (this.oOntology.Terms.ContainsKey(iGOID))
 					{
 						// translate term ID to current ID (alternate ID, replacement, obsolete...)
-						GOTerm term = this.oOntology.GetValueByKey(iGOID);
+						GOTerm term = this.oOntology.Terms.GetValueByKey(iGOID);
 
 						AnnotateTerm(0, term.ID);
 
@@ -716,7 +716,7 @@ namespace IRB.Revigo.Databases
 				}
 
 				// do our thing, assign annotations
-				BHashSet<int> allTermParents = this.oOntology.GetValueByKey(termID).AllParents;
+				BHashSet<int> allTermParents = this.oOntology.Terms.GetValueByKey(termID).AllParents;
 
 				if (!alreadyAnnotated.Contains(termID))
 				{
@@ -824,7 +824,7 @@ namespace IRB.Revigo.Databases
 				for (int i = 0; i < this.oAnnotations.Count; i++)
 				{
 					int termID = this.oAnnotations[i].Key;
-					GOTerm rootGOTerm = this.oOntology.GetValueByKey(termID).TopmostParent;
+					GOTerm rootGOTerm = this.oOntology.Terms.GetValueByKey(termID).TopmostParent;
 
 					this.oNormalizedAnnotations.Add(termID, (double)this.oAnnotations[i].Value / (double)this.oAnnotations.GetValueByKey(rootGOTerm.ID));
 					this.dProgress = (double)i * dProgressStep;

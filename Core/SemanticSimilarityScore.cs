@@ -151,7 +151,7 @@ namespace IRB.Revigo.Core
 			if (term1.ID == term2.ID)
 				return 1.0;
 
-			if (!myGo.ContainsKey(term1.ID) || !myGo.ContainsKey(term2.ID))
+			if (!myGo.Terms.ContainsKey(term1.ID) || !myGo.Terms.ContainsKey(term2.ID))
 				return 0.0;
 
 			double term1Freq = annotations.GetTermFrequency(term1.ID, myGo);

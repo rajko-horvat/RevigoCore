@@ -565,7 +565,7 @@ namespace IRB.Revigo.Core
 							double sizeOfY = oPropertiesY.AnnotationSize;
 
 							// parentsOfX.Contains(oOntology[iYSelectedID])
-							if (oOntology.GetValueByKey(iXID).IsChildOf(iYID))
+							if (oOntology.Terms.GetValueByKey(iXID).IsChildOf(iYID))
 							{
 								/* Y is a parent of X. Now check if Y is constituted mostly of X
 								 * by comparing their log-sizes - if yes, keep X (the more
@@ -586,7 +586,7 @@ namespace IRB.Revigo.Core
 								else
 									iRemoveID = iXID; // Y constituted only partly of X
 							}
-							else if (oOntology.GetValueByKey(iYID).IsChildOf(iXID)) // parentsOfY.Contains(oOntology[iXSelectedID])
+							else if (oOntology.Terms.GetValueByKey(iYID).IsChildOf(iXID)) // parentsOfY.Contains(oOntology[iXSelectedID])
 							{
 								// X is a parent of Y. Rule as above, only reversed.
 								if ((sizeOfX - sizeOfY) / sizeOfX < 0.25)

@@ -86,7 +86,7 @@ namespace IRB.Revigo.Databases
 					continue;
 				}
 
-				GOTerm term = myGo.GetValueByKey(termId);
+				GOTerm term = myGo.Terms.GetValueByKey(termId);
 
 				foreach (string keyword in term.Keywords)
 				{
@@ -126,7 +126,7 @@ namespace IRB.Revigo.Databases
 			foreach (int termID in termsWithParents)
 			{
 				BHashSet<string> wordSet = new BHashSet<string>();
-				foreach (string key in myGo.GetValueByKey(termID).Keywords)
+				foreach (string key in myGo.Terms.GetValueByKey(termID).Keywords)
 				{
 					wordSet.Add(key);
 				}

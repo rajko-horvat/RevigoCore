@@ -148,7 +148,7 @@ namespace IRB.Revigo.Databases
 			{
 				// look at sizes of all siblings, and average them to guess the
 				// frequency of the term
-				GOTerm curTerm = myGo.GetValueByKey(goId);
+				GOTerm curTerm = myGo.Terms.GetValueByKey(goId);
 				BHashSet<GOTerm> sibs = curTerm.GetSiblings();
 				int numUsableSibs = 0;
 				int sumOfSizesOfUsableSibs = 0;
@@ -192,7 +192,7 @@ namespace IRB.Revigo.Databases
 
 				foreach (int parentID in parentIDs)
 				{
-					if (myGo.GetValueByKey(parentID).IsTopmost)
+					if (myGo.Terms.GetValueByKey(parentID).IsTopmost)
 						continue;
 
 					if (this.oAnnotations.ContainsKey(parentID))
@@ -239,7 +239,7 @@ namespace IRB.Revigo.Databases
 				return this.dSumOfNormalizedAnnotations / this.oNormalizedAnnotations.Count;
 			}
 
-			GOTerm curTerm = myGo.GetValueByKey(goId);
+			GOTerm curTerm = myGo.Terms.GetValueByKey(goId);
 			BHashSet<GOTerm> sibs = curTerm.GetSiblings();
 			int numUsableSibs = 0;
 			double sumOfFreqsOfUsableSibs = 0.0;
@@ -301,7 +301,7 @@ namespace IRB.Revigo.Databases
 
 			foreach (int parentID in parentIDs)
 			{
-				if (myGo.GetValueByKey(parentID).IsTopmost)
+				if (myGo.Terms.GetValueByKey(parentID).IsTopmost)
 					continue;
 
 				// Added by rhorvat at 5.3.2022. - For this to work properly we have to define Normalized annotations for all siblings and all children
