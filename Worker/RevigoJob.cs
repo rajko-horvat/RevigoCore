@@ -68,9 +68,9 @@ namespace IRB.Revigo.Worker
 			}
 		}
 
-		public void ExtendExpiration(int minutes)
+		public void ExtendExpiration(TimeSpan extend)
 		{
-			DateTime newExpiration = DateTime.Now.AddMinutes(minutes);
+			DateTime newExpiration = DateTime.Now.Add(extend);
 
 			if (this.dtExpiration < newExpiration)
 				this.dtExpiration = newExpiration;
