@@ -484,7 +484,7 @@ namespace IRB.Revigo.Worker
 		{
 			lock (this.oWorkerLock)
 			{
-				if (!this.bRunning && !this.HasUserErrors && !this.HasDeveloperErrors && !oToken.IsCancellationRequested)
+				if (!this.bRunning && !this.HasUserErrors && !this.HasDeveloperErrors)
 				{
 					this.oToken = new CancellationTokenSource();
 					this.bFinished = false;
