@@ -41,17 +41,25 @@ namespace IRB.Revigo.Core
 		/// </summary>
 		/// <param name="parent"></param>
 		public TermSimilarityMatrix(TermListVisualizer parent)
-			: this(parent, null)
+			: this(parent, null, null)
 		{ }
 
 		/// <summary>
 		/// Constructs a distance matrix of all the GO terms present in termList.
 		/// </summary>
 		/// <param name="parent"></param>
-		public TermSimilarityMatrix(TermListVisualizer parent, ProgressEventHandler progress)
+		public TermSimilarityMatrix(TermListVisualizer parent, CancellationToken? token)
+			: this(parent, token, null)
+		{ }
+
+		/// <summary>
+		/// Constructs a distance matrix of all the GO terms present in termList.
+		/// </summary>
+		/// <param name="parent"></param>
+		public TermSimilarityMatrix(TermListVisualizer parent, CancellationToken? token, ProgressEventHandler progress)
 		{
 			this.oParent = parent;
-			ConstructMatrix(progress);
+			ConstructMatrix(token, progress);
 		}
 
 		public TermListVisualizer Parent
@@ -70,7 +78,7 @@ namespace IRB.Revigo.Core
 			}
 		}
 
-		private void ConstructMatrix(ProgressEventHandler progress)
+		private void ConstructMatrix(CancellationToken? token, ProgressEventHandler progress)
 		{
 			SemanticSimilarityScoreEnum simScore = this.oParent.Parent.Measure;
 			GeneOntology myGO = this.oParent.Parent.Ontology;
@@ -89,6 +97,11 @@ namespace IRB.Revigo.Core
 
 				for (int j = i + 1; j < iTermCount; j++)
 				{
+					if (token.HasValue && token.Value.IsCancellationRequested)
+					{
+						return;
+					}
+
 					GOTerm go2 = terms[j];
 					double simil =
 						SemanticSimilarityScore.GetSemanticSimilarityScore(simScore).calculateDistance(go1, go2, oAnnotations, myGO);
@@ -113,7 +126,7 @@ namespace IRB.Revigo.Core
 		/// The "commonness" will be stored as a property in the provided
 		/// GoTermProperties object (this will overwrite old values of "uniqueness", if present).
 		/// </summary>
-		public void CalculateUniqueness()
+		public void CalculateUniqueness(CancellationToken? token)
 		{
 			GOTerm[] terms = this.oParent.Terms;
 			int iTermCount = terms.Length;
@@ -126,6 +139,11 @@ namespace IRB.Revigo.Core
 
 				for (int j = 0; j < iTermCount; j++)
 				{
+					if (token.HasValue && token.Value.IsCancellationRequested)
+					{
+						return;
+					}
+
 					if (i != j && !double.IsNaN(this.oMatrix[i, j]))
 					{
 						sum += this.oMatrix[i, j];

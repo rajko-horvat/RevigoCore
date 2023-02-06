@@ -18,7 +18,7 @@
 
   <ItemGroup>
     <None Update="Flowchart.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

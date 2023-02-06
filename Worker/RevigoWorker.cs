@@ -102,6 +102,8 @@ namespace IRB.Revigo.Worker
 
 		public event EventHandler OnFinish = delegate { };
 
+		private CancellationTokenSource oToken;
+
 		public RevigoWorker(GeneOntology ontology, SpeciesAnnotations annotations, TimeSpan timeout, RequestSourceEnum requestSource,
 			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityScoreEnum measure, bool removeObsolete) :
 			this(-1, ontology, annotations, timeout, requestSource,
@@ -482,11 +484,12 @@ namespace IRB.Revigo.Worker
 		{
 			lock (this.oWorkerLock)
 			{
-				if (!this.bRunning && !this.HasUserErrors && !this.HasDeveloperErrors)
+				if (!this.bRunning && !this.HasUserErrors && !this.HasDeveloperErrors && !oToken.IsCancellationRequested)
 				{
+					this.oToken = new CancellationTokenSource();
 					this.bFinished = false;
 					this.oWorkerThread = new Thread(StartRevigo);
-					this.oWorkerThread.Start();
+					this.oWorkerThread.Start(oToken.Token);
 				}
 			}
 		}
@@ -555,11 +558,12 @@ namespace IRB.Revigo.Worker
 		{
 			lock (this.oWorkerLock)
 			{
-				if (this.bRunning)
+				if (this.bRunning && !oToken.IsCancellationRequested)
 				{
 					try
 					{
-						this.oWorkerThread.Abort();
+						this.oToken.Cancel();
+						//this.oWorkerThread.Abort();
 					}
 					catch { }
 				}
@@ -568,11 +572,12 @@ namespace IRB.Revigo.Worker
 
 		void oWorkerTimer_Elapsed(object sender, ElapsedEventArgs e)
 		{
-			if (this.bRunning)
+			if (this.bRunning && !oToken.IsCancellationRequested)
 			{
 				try
 				{
-					this.oWorkerThread.Abort();
+					this.oToken.Cancel();
+					//this.oWorkerThread.Abort();
 				}
 				catch { }
 			}
@@ -580,8 +585,9 @@ namespace IRB.Revigo.Worker
 
 		private GONamespaceEnum eCurrentNamespace = GONamespaceEnum.None;
 
-		private void StartRevigo()
+		private void StartRevigo(object token)
 		{
+			CancellationToken oToken = (CancellationToken)token;
 			StreamWriter oLogWriter = null;
 
 			this.bRunning = true;
@@ -641,6 +647,12 @@ namespace IRB.Revigo.Worker
 
 					while ((sLine = oDataReader.ReadLine()) != null)
 					{
+						if (oToken.IsCancellationRequested)
+						{
+							this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
+							return;
+						}
+
 						iLinePos++;
 						this.dProgress = this.dProgressPos + (((double)iLinePos * this.dProgressSlice) / (double)iLineCount);
 
@@ -918,7 +930,13 @@ namespace IRB.Revigo.Worker
 				{
 					this.eCurrentNamespace = GONamespaceEnum.BIOLOGICAL_PROCESS;
 					this.oBPVisualizer = new TermListVisualizer(this, GONamespaceEnum.BIOLOGICAL_PROCESS, this.oBPTerms.ToArray(),
-						this.oAllProperties, Visualizer_OnProgress);
+						this.oAllProperties, oToken, Visualizer_OnProgress);
+
+					if (oToken.IsCancellationRequested)
+					{
+						this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
+						return;
+					}
 
 					if (this.oBPVisualizer.MDSError)
 					{
@@ -958,7 +976,13 @@ namespace IRB.Revigo.Worker
 				{
 					this.eCurrentNamespace = GONamespaceEnum.CELLULAR_COMPONENT;
 					this.oCCVisualizer = new TermListVisualizer(this, GONamespaceEnum.CELLULAR_COMPONENT, this.oCCTerms.ToArray(),
-						this.oAllProperties, Visualizer_OnProgress);
+						this.oAllProperties, oToken, Visualizer_OnProgress);
+
+					if (oToken.IsCancellationRequested)
+					{
+						this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
+						return;
+					}
 
 					if (this.oCCVisualizer.MDSError)
 					{
@@ -998,7 +1022,13 @@ namespace IRB.Revigo.Worker
 				{
 					this.eCurrentNamespace = GONamespaceEnum.MOLECULAR_FUNCTION;
 					this.oMFVisualizer = new TermListVisualizer(this, GONamespaceEnum.MOLECULAR_FUNCTION, this.oMFTerms.ToArray(),
-						this.oAllProperties, Visualizer_OnProgress);
+						this.oAllProperties, oToken, Visualizer_OnProgress);
+
+					if (oToken.IsCancellationRequested)
+					{
+						this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
+						return;
+					}
 
 					if (this.oMFVisualizer.MDSError)
 					{
@@ -1042,10 +1072,22 @@ namespace IRB.Revigo.Worker
 					GOTermWordCorpus corpus = new GOTermWordCorpus(this.oAllTerms, this.oOntology);
 					this.oEnrichments = corpus.calculateWordEnrichment(this.oAnnotations.WordCorpus, 70, 0);
 
+					if (oToken.IsCancellationRequested)
+					{
+						this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
+						return;
+					}
+
 					if (this.iTermsWithValuesCount != 0)
 					{
 						GOTermWordCorpus correlCorpus = new GOTermWordCorpus(this.oAllTerms, this.oAllProperties, this.oOntology);
 						this.oCorrelations = correlCorpus.getMostFrequentWords(70);
+					}
+
+					if (oToken.IsCancellationRequested)
+					{
+						this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
+						return;
 					}
 
 					this.bRecalculateMixed = false;
@@ -1069,15 +1111,14 @@ namespace IRB.Revigo.Worker
 				this.dProgress = 100.0;
 				this.sProgressText = "Finished";
 			}
-			catch (ThreadAbortException)
-			{
-				this.aErrors.Add("Revigo didn't finish processing your data in a timely fashion.");
-			}
 			catch (Exception ex)
 			{
 				this.aErrors.Add("Unknown error has occured.");
-				this.aDevErrors.Add(string.Format("Exception: {0}", ex.Message));
-				this.aDevErrors.Add(string.Format("Stack trace: {0}", ex.StackTrace));
+				if (!oToken.IsCancellationRequested)
+				{
+					this.aDevErrors.Add(string.Format("Exception: {0}", ex.Message));
+					this.aDevErrors.Add(string.Format("Stack trace: {0}", ex.StackTrace));
+				}
 			}
 			finally
 			{
