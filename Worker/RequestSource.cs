@@ -34,6 +34,6 @@ namespace IRB.Revigo.Worker
 	{
 		WebPage,
 		RestfulAPI,
-		JubSubmitting
+		JobSubmitting
 	}
 }
