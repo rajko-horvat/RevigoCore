@@ -824,7 +824,7 @@ namespace IRB.Revigo.Databases
 				for (int i = 0; i < this.oAnnotations.Count; i++)
 				{
 					int termID = this.oAnnotations[i].Key;
-					GOTerm rootGOTerm = this.oOntology.Terms.GetValueByKey(termID).TopmostParent;
+					GOTerm rootGOTerm = this.oOntology.Terms.GetValueByKey(termID).TopNode;
 
 					this.oNormalizedAnnotations.Add(termID, (double)this.oAnnotations[i].Value / (double)this.oAnnotations.GetValueByKey(rootGOTerm.ID));
 					this.dProgress = (double)i * dProgressStep;

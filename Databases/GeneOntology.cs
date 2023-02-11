@@ -109,11 +109,10 @@ namespace IRB.Revigo.Databases
 			for (int i = 0; i < this.aTerms.Count; i++)
 			{
 				GOTerm curTerm = this.aTerms[i].Value;
-				if (curTerm.IsObsolete && curTerm.ReplacedByID > 0)
+				if (curTerm.IsObsolete && curTerm.ReplacementIDs.Count > 0)
 				{
-					curTerm.ParentIDs.Clear();
-
-					GOTerm replTerm = this.aTerms.GetValueByKey(curTerm.ReplacedByID);
+					// use first replacemnet term
+					GOTerm replTerm = this.aTerms.GetValueByKey(curTerm.ReplacementIDs[0]);
 					replTerm.AltIDs.Add(curTerm.ID);
 					replTerm.AltIDs.AddRange((IEnumerable<int>)curTerm.AltIDs);
 
@@ -133,10 +132,10 @@ namespace IRB.Revigo.Databases
 				}
 			}
 
-			InitializeGO();
-
-			this.addKeywordsFromUniprotKeywords(string.Format("{0}.{1}keywlist.txt",
+			this.AddKeywordsFromUniprotKeywords(string.Format("{0}.{1}keywlist.txt",
 				Path.GetDirectoryName(goPath), Path.DirectorySeparatorChar));
+
+			InitializeGO();
 		}
 
 		protected void InitializeGO()
@@ -176,8 +175,8 @@ namespace IRB.Revigo.Databases
 			for (int i = 0; i < this.aTerms.Count; i++)
 			{
 				BHashSet<string> keyw = this.aTerms[i].Value.Keywords;
-				//BHashSet<int> parents = this[i].Value.AllParents;
-				GOTerm top = this.aTerms[i].Value.TopmostParent;
+				BHashSet<int> parents = this.aTerms[i].Value.AllParents;
+				GOTerm top = this.aTerms[i].Value.TopNode;
 			}
 		}
 
@@ -298,7 +297,7 @@ namespace IRB.Revigo.Databases
 							}
 							break;
 						case "replaced_by":
-							oCurrentTerm.ReplacedByID = ParseGOID(sItemValue);
+							oCurrentTerm.ReplacementIDs.Add(ParseGOID(sItemValue));
 							break;
 						case "is_a":
 						case "to":
@@ -467,10 +466,7 @@ namespace IRB.Revigo.Databases
 									}
 									break;
 								case "replaced_by":
-									if (oCurrentTerm.ReplacedByID < 0)
-									{
-										oCurrentTerm.ReplacedByID = ParseGOID(sTagValue);
-									}
+									oCurrentTerm.ReplacementIDs.Add(ParseGOID(sTagValue));
 									break;
 								case "is_a":
 								case "to":
@@ -559,7 +555,7 @@ namespace IRB.Revigo.Databases
 		/// <summary>
 		/// Parses the Uniprot keywords file
 		/// </summary>
-		private void addKeywordsFromUniprotKeywords(string fileName)
+		private void AddKeywordsFromUniprotKeywords(string fileName)
 		{
 			if (File.Exists(fileName))
 			{
@@ -709,6 +705,9 @@ namespace IRB.Revigo.Databases
 			}
 		}
 
+		/// <summary>
+		/// The Terms that constitue Gene Ontology
+		/// </summary>
 		public BDictionary<int, GOTerm> Terms
 		{
 			get { return this.aTerms; }

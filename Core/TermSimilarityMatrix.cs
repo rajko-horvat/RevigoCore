@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Data.Common;
+using IRB.Collections.Generic;
 using IRB.Revigo.Databases;
 using IRB.Revigo.Worker;
 
@@ -20,8 +22,6 @@ namespace IRB.Revigo.Core
 	/// 	and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
 	/// 	subject to the following conditions: 
 	/// 	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-	/// 	The names of authors and contributors may not be used to endorse or promote Software products derived from this software 
-	/// 	without specific prior written permission.
 	/// 	
 	/// 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
 	/// 	INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
@@ -34,7 +34,8 @@ namespace IRB.Revigo.Core
 	{
 		private TermListVisualizer oParent = null;
 
-		private double[,] oMatrix = null;
+		private double[,] aMatrix = null;
+		//private double[] aMatrix1 = null;
 
 		/// <summary>
 		/// Constructs a distance matrix of all the GO terms present in termList.
@@ -74,40 +75,76 @@ namespace IRB.Revigo.Core
 		{
 			get
 			{
-				return this.oMatrix;
+				return this.aMatrix;
 			}
 		}
 
+		/*public double GetValue(int row, int column)
+		{
+			if (row == column)
+				return 1.0;
+
+			int iRow = row;
+			int iColumn = column - 1;
+
+			if (iRow > iColumn)
+			{
+				iRow = column;
+				iColumn = row - 1;
+			}
+
+			return this.aMatrix1[(iColumn * (iColumn + 1)) / 2 + iRow];
+		}*/
+
 		private void ConstructMatrix(CancellationToken? token, ProgressEventHandler progress)
 		{
-			SemanticSimilarityScoreEnum simScore = this.oParent.Parent.Measure;
+			SemanticSimilarityEnum similarityType = this.oParent.Parent.SemanticSimilarity;
 			GeneOntology myGO = this.oParent.Parent.Ontology;
 			SpeciesAnnotations oAnnotations = this.oParent.Parent.Annotations;
 			GOTerm[] terms = this.oParent.Terms;
 			int iTermCount = terms.Length;
 			double dProgressStep = 100.0 / (double)iTermCount;
 			double dOldProgress = 0.0;
-			this.oMatrix = new double[iTermCount, iTermCount];
+			this.aMatrix = new double[iTermCount, iTermCount];
+			//this.aMatrix1 = new double[(iTermCount * (iTermCount + 1)) / 2 - iTermCount];
+
+			/*for (int i = 1; i < iTermCount; i++)
+			{
+				GOTerm go1 = terms[i];
+
+				for (int j = 0; j < i; j++)
+				{
+					GOTerm go2 = terms[j];
+					this.aMatrix1[((i - 1) * i) / 2 + j] = CalculateSemanticSimilarity(similarityType, go1, go2, oAnnotations, myGO);
+				}
+
+				double dProgress = (double)i * dProgressStep;
+				if ((dProgress - dOldProgress) >= 0.1 && progress != null)
+				{
+					dOldProgress = dProgress;
+					progress(this, new ProgressEventArgs(dProgress));
+				}
+			}*/
 
 			for (int i = 0; i < iTermCount; i++)
 			{
 				GOTerm go1 = terms[i];
 
-				this.oMatrix[i, i] = 1.0;
+				this.aMatrix[i, i] = 1.0;
 
 				for (int j = i + 1; j < iTermCount; j++)
 				{
+					// do we need to gracefuly exit?
 					if (token.HasValue && token.Value.IsCancellationRequested)
 					{
 						return;
 					}
 
 					GOTerm go2 = terms[j];
-					double simil =
-						SemanticSimilarityScore.GetSemanticSimilarityScore(simScore).calculateDistance(go1, go2, oAnnotations, myGO);
+					double simil = CalculateSemanticSimilarity(similarityType, go1, go2, oAnnotations, myGO);
 
-					this.oMatrix[i, j] = simil;
-					this.oMatrix[j, i] = simil;
+					this.aMatrix[i, j] = simil;
+					this.aMatrix[j, i] = simil;
 				}
 
 				double dProgress = (double)(i + 1) * dProgressStep;
@@ -117,6 +154,73 @@ namespace IRB.Revigo.Core
 					progress(this, new ProgressEventArgs(dProgress));
 				}
 			}
+
+			// compare two matrices
+			/*for (int i = 0; i < iTermCount; i++)
+			{
+				for (int j = 0; j < iTermCount; j++)
+				{
+					if (this.aMatrix[i, j] != this.GetValue(i, j))
+					{
+						Console.WriteLine("Matrices not equal");
+					}
+				}
+			}*/
+		}
+
+		/// <summary>
+		/// See http://www.biomedcentral.com/1471-2105/7/302 <br/>
+		/// (Schlicker et al. BMC Bioinformatics 2006)
+		/// </summary>
+		/// <returns></returns>
+		private double CalculateSemanticSimilarity(SemanticSimilarityEnum similarityType, GOTerm term1, GOTerm term2, SpeciesAnnotations annotations, GeneOntology myGo)
+		{
+			if (term1.ID == term2.ID)
+				return 1.0;
+
+			if (!myGo.Terms.ContainsKey(term1.ID) || !myGo.Terms.ContainsKey(term2.ID))
+				return 0.0;
+
+			double term1Freq = annotations.GetTermFrequency(term1.ID, myGo);
+			double term2Freq = annotations.GetTermFrequency(term2.ID, myGo);
+
+			// first find frequency of most informative parent
+			// (also called MIA or Most Informative Common Ancestor)
+			BHashSet<int> commonParents = term1.GetAllCommonParents(term2);
+
+			double freqOfMostInfoParent = 1.0;
+			foreach (int termID in commonParents)
+			{
+				freqOfMostInfoParent = Math.Min(freqOfMostInfoParent, annotations.GetTermFrequency(termID, myGo));
+			}
+
+			double curValue;
+
+			switch (similarityType)
+			{
+				case SemanticSimilarityEnum.RESNIK: // normalized to [0,1]; we assume 4 is a 'very large' value
+					curValue = Math.Min(-Math.Log10(freqOfMostInfoParent), 4.0) / 4.0;
+					break;
+				case SemanticSimilarityEnum.LIN:
+					curValue = 2.0 * Math.Log10(freqOfMostInfoParent) /
+						(Math.Log10(term1Freq) + Math.Log10(term2Freq));
+					break;
+				case SemanticSimilarityEnum.SIMREL:
+					curValue = 2.0 * Math.Log10(freqOfMostInfoParent) /
+						(Math.Log10(term1Freq) + Math.Log10(term2Freq));
+					curValue *= (1.0 - freqOfMostInfoParent);
+					break;
+				case SemanticSimilarityEnum.JIANG:
+					curValue = 1.0 / (-Math.Log10(term1Freq) - Math.Log10(term2Freq) +
+						2 * Math.Log10(freqOfMostInfoParent) + 1.0);
+					break;
+				default:
+					throw new ArgumentException("Not yet implemented.");
+			}
+			//if (curValue == -0.0)
+			//	curValue = 0.0;
+
+			return curValue;
 		}
 
 		/// <summary>
@@ -144,9 +248,10 @@ namespace IRB.Revigo.Core
 						return;
 					}
 
-					if (i != j && !double.IsNaN(this.oMatrix[i, j]))
+					double dValue = this.Matrix[i, j];
+					if (i != j && !double.IsNaN(dValue))
 					{
-						sum += this.oMatrix[i, j];
+						sum += dValue;
 						count++;
 					}
 				}
@@ -163,18 +268,6 @@ namespace IRB.Revigo.Core
 					properties[i].Uniqueness = Math.Pow(1.0 - (sum / (double)count), 2.0);
 				}
 			}
-		}
-
-		public TermSimilarityMatrix Clone()
-		{
-			TermSimilarityMatrix result = new TermSimilarityMatrix(this.oParent);
-
-			int iLength = this.oMatrix.GetLength(0);
-			result.oMatrix = new double[iLength, iLength];
-
-			Array.Copy(this.oMatrix, result.oMatrix, this.oMatrix.Length);
-
-			return result;
 		}
 	}
 }

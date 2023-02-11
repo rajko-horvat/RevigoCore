@@ -26,11 +26,11 @@
 	/// 	DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
 	/// 	ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	/// </summary>
-	public enum SemanticSimilarityScoreEnum
+	public enum SemanticSimilarityEnum
 	{
-		SIMREL = 2,
-		LIN = 3,
-		RESNIK = 4,
-		JIANG = 5
+		SIMREL,
+		LIN,
+		RESNIK,
+		JIANG
 	}
 }

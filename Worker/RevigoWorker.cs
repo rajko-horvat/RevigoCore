@@ -48,7 +48,7 @@ namespace IRB.Revigo.Worker
 		private double dCutOff = 0.7;
 		private ValueTypeEnum eValueType = ValueTypeEnum.PValue;
 		private SpeciesAnnotations oAnnotations = null;
-		private SemanticSimilarityScoreEnum eMeasure = SemanticSimilarityScoreEnum.SIMREL;
+		private SemanticSimilarityEnum eSemanticSimilarity = SemanticSimilarityEnum.SIMREL;
 		private bool bRemoveObsolete = true;
 		private string sData = null;
 
@@ -105,14 +105,14 @@ namespace IRB.Revigo.Worker
 		private CancellationTokenSource oToken;
 
 		public RevigoWorker(GeneOntology ontology, SpeciesAnnotations annotations, TimeSpan timeout, RequestSourceEnum requestSource,
-			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityScoreEnum measure, bool removeObsolete) :
+			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityEnum similarity, bool removeObsolete) :
 			this(-1, ontology, annotations, timeout, requestSource,
-			data, cutOff, valueType, measure, removeObsolete)
+			data, cutOff, valueType, similarity, removeObsolete)
 		{
 		}
 
 		public RevigoWorker(int jobID, GeneOntology ontology, SpeciesAnnotations annotations, TimeSpan timeout, RequestSourceEnum requestSource,
-			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityScoreEnum measure, bool removeObsolete)
+			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityEnum similarity, bool removeObsolete)
 		{
 			this.iJobID = jobID;
 			this.oOntology = ontology;
@@ -122,7 +122,7 @@ namespace IRB.Revigo.Worker
 			this.sData = data;
 			this.dCutOff = cutOff;
 			this.eValueType = valueType;
-			this.eMeasure = measure;
+			this.eSemanticSimilarity = similarity;
 			this.bRemoveObsolete = removeObsolete;
 
 			ValidateCutOff();
@@ -206,17 +206,17 @@ namespace IRB.Revigo.Worker
 			}
 		}
 
-		public SemanticSimilarityScoreEnum Measure
+		public SemanticSimilarityEnum SemanticSimilarity
 		{
 			get
 			{
-				return this.eMeasure;
+				return this.eSemanticSimilarity;
 			}
 			set
 			{
 				if (!this.bRunning)
 				{
-					this.eMeasure = value;
+					this.eSemanticSimilarity = value;
 				}
 			}
 		}

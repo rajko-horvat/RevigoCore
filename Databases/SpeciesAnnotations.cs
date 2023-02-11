@@ -192,7 +192,7 @@ namespace IRB.Revigo.Databases
 
 				foreach (int parentID in parentIDs)
 				{
-					if (myGo.Terms.GetValueByKey(parentID).IsTopmost)
+					if (myGo.Terms.GetValueByKey(parentID).IsTopNode)
 						continue;
 
 					if (this.oAnnotations.ContainsKey(parentID))
@@ -301,7 +301,7 @@ namespace IRB.Revigo.Databases
 
 			foreach (int parentID in parentIDs)
 			{
-				if (myGo.Terms.GetValueByKey(parentID).IsTopmost)
+				if (myGo.Terms.GetValueByKey(parentID).IsTopNode)
 					continue;
 
 				// Added by rhorvat at 5.3.2022. - For this to work properly we have to define Normalized annotations for all siblings and all children

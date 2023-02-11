@@ -1,6 +1,9 @@
 ﻿## Repository description
 <p>This is the main REVIGO Core library that implements the whole clustering algorithm and visualizations.</p>
 
+## How to compile and use this library
+<p>To compile and use this library you need the Visual Studio Code (Visual Studio is better) and .NET core (or a Mono.NET from a Mono project).</p>
+
 ## About REVIGO (REduce + VIsualize Gene Ontology) project
 <p>Outcomes of high-throughput biological experiments are typically interpreted by statistical testing
 for enriched gene functional categories defined by the Gene Ontology (GO). The resulting lists of GO terms 

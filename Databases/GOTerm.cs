@@ -52,9 +52,8 @@ namespace IRB.Revigo.Databases
 		private string sDescription = null;
 		private string sComment = null;
 		private bool bObsolete = false;
-		// For obsolete terms, here is a suitable replacement. (Note: just one 
-		// replacement term is stored here while the OBO-XML file may offer to more than one)
-		private int iReplaceByID = -1;
+		// For obsolete terms, here is a suitable replacement.
+		private BHashSet<int> aReplacementIDs = new BHashSet<int>();
 		private GONamespaceEnum eNamespace; // The namespace this term belongs to.
 		private BHashSet<string> aKeywords = null;
 
@@ -65,8 +64,8 @@ namespace IRB.Revigo.Databases
 		private BHashSet<GOTerm> aParents = new BHashSet<GOTerm>(); // A list of all parents of the node.
 		private BHashSet<GOTerm> aChildren = new BHashSet<GOTerm>(); // A list of all children of the node.
 
-		private BHashSet<int> oAllParentsCached = null; // This speeds up all parents lookups
-		private GOTerm oTopmostCached = null; // This speeds up topmost parent lookups
+		private BHashSet<int> oParentNodesCached = null; // This speeds up all parents lookups
+		private GOTerm oTopNodeCached = null; // This speeds up topmost parent lookups
 
 		public GOTerm()
 		{ }
@@ -234,15 +233,11 @@ namespace IRB.Revigo.Databases
 			}
 		}
 
-		public int ReplacedByID
+		public BHashSet<int> ReplacementIDs
 		{
 			get
 			{
-				return this.iReplaceByID;
-			}
-			set
-			{
-				this.iReplaceByID = value;
+				return this.aReplacementIDs;
 			}
 		}
 
@@ -409,7 +404,7 @@ namespace IRB.Revigo.Databases
 		{
 			get
 			{
-				if (this.oAllParentsCached == null)
+				if (this.oParentNodesCached == null)
 				{
 					BHashSet<int> parents = new BHashSet<int>();
 
@@ -422,18 +417,18 @@ namespace IRB.Revigo.Databases
 							parents.Add(parentIDs[i]);
 						}
 					}
-					this.oAllParentsCached = parents;
+					this.oParentNodesCached = parents;
 				}
 
-				return this.oAllParentsCached;
+				return this.oParentNodesCached;
 			}
 		}
 
 		/// <summary>
-		/// Returns true if the node is a topmost node (if it has no parents).
+		/// Returns true if the node is a top node (if it has no parents).
 		/// </summary>
 		[XmlIgnore]
-		public bool IsTopmost
+		public bool IsTopNode
 		{
 			get
 			{
@@ -442,42 +437,25 @@ namespace IRB.Revigo.Databases
 		}
 
 		/// <summary>
-		/// Finds the topmost parent of the given node (i.e. the one that has no parents.)
+		/// Finds the top node of the given node (i.e. the one that has no parents.)
 		/// </summary>
 		/// <returns></returns>
 		[XmlIgnore]
-		public GOTerm TopmostParent
+		public GOTerm TopNode
 		{
 			get
 			{
-				if (this.oTopmostCached == null)
+				if (this.oTopNodeCached == null)
 				{
 					GOTerm curNode = this;
-					while (!curNode.IsTopmost)
+					while (!curNode.IsTopNode)
 					{
 						curNode = curNode.aParents[0];
 					}
-					this.oTopmostCached = curNode;
+					this.oTopNodeCached = curNode;
 				}
 
-				return this.oTopmostCached;
-			}
-		}
-
-		public void ResetAllParents()
-		{
-			this.oAllParentsCached = null;
-			ResetAllParentsHelper();
-		}
-
-		/// <summary>
-		/// A helper function for AllParents recursive search.
-		/// </summary>
-		private void ResetAllParentsHelper()
-		{
-			foreach (GOTerm curNode in this.aChildren)
-			{
-				curNode.ResetAllParentsHelper();
+				return this.oTopNodeCached;
 			}
 		}
 
@@ -540,39 +518,6 @@ namespace IRB.Revigo.Databases
 			mySibs.Remove(this);
 
 			return mySibs;
-		}
-
-		public BDictionary<GOTerm, int> GetAllTopNodesWithDepth()
-		{
-			BDictionary<GOTerm, int> result = new BDictionary<GOTerm, int>();
-			GetAllTopNodesWithDepthHelper(result, 0);
-
-			return result;
-		}
-
-		private void GetAllTopNodesWithDepthHelper(BDictionary<GOTerm, int> nodes, int depth)
-		{
-			if (this.IsTopmost)
-			{
-				if (nodes.ContainsKey(this))
-				{
-					if (depth < nodes.GetValueByKey(this))
-					{
-						nodes.SetValueByKey(this, depth);
-					}
-				}
-				else
-				{
-					nodes.Add(this, depth);
-				}
-
-				return;
-			}
-
-			foreach (GOTerm curNode in this.aParents)
-			{
-				curNode.GetAllTopNodesWithDepthHelper(nodes, depth + 1);
-			}
 		}
 
 		/// <summary>
