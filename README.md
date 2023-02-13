@@ -2,7 +2,7 @@
 <p>This is the main REVIGO Core library that implements the whole clustering algorithm and visualizations.</p>
 
 ## How to compile and use this library
-<p>To compile and the this library: 
+<p>To compile and use this library: 
 <ul>
 	<li>Optional: Install Visual Studio Code</li>
 	<li>Install .NET core 6.0 from Microsoft (<a href="https://dotnet.microsoft.com/download">Install .NET for Windows</a>, <a href="https://learn.microsoft.com/en-us/dotnet/core/install/linux">Install .NET for Linux</a>)</li>
