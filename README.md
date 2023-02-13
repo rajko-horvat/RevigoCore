@@ -2,9 +2,10 @@
 <p>This is the main REVIGO Core library that implements the whole clustering algorithm and visualizations.</p>
 
 ## How to compile and use this library
-<p>To compile and use this library you need the Visual Studio Code (Visual Studio is better) and .NET core (or a Mono.NET from a Mono project).</p>
-<p>The command line equivalent is: 
+<p>To compile and the this library: 
 <ul>
+	<li>Optional: Install Visual Studio Code</li>
+	<li>Install .NET core 6.0 from Microsoft (<a href="https://dotnet.microsoft.com/download">Install .NET for Windows</a>, <a href="https://learn.microsoft.com/en-us/dotnet/core/install/linux">Install .NET for Linux</a>)</li>
 	<li>git clone https://github.com/rajko-horvat/RevigoCore</li>
 	<li>dotnet build --configuration Release --os linux RevigoCore.csproj (See <a href="https://learn.microsoft.com/en-us/dotnet/core/rid-catalog">list of OS RIDs</a> for --os option)</li>
 </ul></p>
