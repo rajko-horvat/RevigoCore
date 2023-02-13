@@ -1,5 +1,5 @@
 ﻿## Repository description
-<p>This is the main REVIGO Core library that implements the whole clustering algorithm and visualizations.</p>
+<p>This is the main REVIGO Core library that implements the whole clustering algorithm.</p>
 
 ## How to compile and use this library
 <p>To compile and use this library: 
