@@ -8,7 +8,7 @@
 	<li>Install .NET core 6.0 from Microsoft (<a href="https://dotnet.microsoft.com/download">Install .NET for Windows</a>, <a href="https://learn.microsoft.com/en-us/dotnet/core/install/linux">Install .NET for Linux</a>)</li>
 	<li>git clone https://github.com/rajko-horvat/RevigoCore</li>
 	<li>dotnet build --configuration Release --os win-x64 RevigoCore.csproj (For Linux use --os linux. See <a href="https://learn.microsoft.com/en-us/dotnet/core/rid-catalog">list of OS RIDs</a> for --os option)</li>
-	<li>Copy generated binary files (under RevigoCore/bin/net6.0/ to your project and enjoy.</li>
+	<li>Copy generated binary files (under RevigoCore/bin/net6.0/) to your project and enjoy.</li>
 </ul></p>
 
 ## About REVIGO (REduce + VIsualize Gene Ontology) project
