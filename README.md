@@ -6,7 +6,7 @@
 <p>The command line equivalent is: 
 <ul>
 	<li>git clone https://github.com/rajko-horvat/RevigoCore</li>
-	<li>dotnet build --configuration Release --os linux RevigoCore.csproj (See <a href="https://learn.microsoft.com/en-us/dotnet/core/rid-catalog">for a list of OS RIDs</a></li>
+	<li>dotnet build --configuration Release --os linux RevigoCore.csproj (See <a href="https://learn.microsoft.com/en-us/dotnet/core/rid-catalog">list of OS RIDs</a> for --os option)</li>
 </ul></p>
 
 ## About REVIGO (REduce + VIsualize Gene Ontology) project
