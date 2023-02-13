@@ -117,7 +117,7 @@ namespace IRB.Revigo.Databases
 			foreach (GOTerm term in goTerms)
 			{
 				termsWithParents.Add(term.ID);
-				foreach (int termID in term.AllParents)
+				foreach (int termID in term.AllParentIDs)
 				{
 					termsWithParents.Add(termID);
 				}

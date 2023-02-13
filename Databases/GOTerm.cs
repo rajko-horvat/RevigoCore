@@ -47,28 +47,31 @@ namespace IRB.Revigo.Databases
 		private GeneOntology oOntology = null;
 		private int iID = -1; // The main unique ID for the node.
 		private BHashSet<int> aAltIDs = new BHashSet<int>(); // List of alternate IDs for the node.
+		private GONamespaceEnum eNamespace; // The namespace this term belongs to.
 		private string sName = null; // The main name of the node.
 		private List<string> aAltNames = new List<string>(); // List of alternate names for the node
 		private string sDescription = null;
 		private string sComment = null;
 		private bool bObsolete = false;
-		// For obsolete terms, here is a suitable replacement.
-		private BHashSet<int> aReplacementIDs = new BHashSet<int>();
-		private GONamespaceEnum eNamespace; // The namespace this term belongs to.
-		private BHashSet<string> aKeywords = null;
+		
+		private BHashSet<int> aGOParentIDs = new BHashSet<int>(); // A list of all parent IDs of the node in the ontology
+		private BHashSet<int> aGOPartOfIDs = new BHashSet<int>(); // A list of all conditional parent IDs of the node in the ontology
+		private BHashSet<int> aGOHasPartIDs = new BHashSet<int>(); // A list of all conditional children IDs of the node in the ontology
+		private BHashSet<int> aGOConsiderIDs = new BHashSet<int>(); // A list of all terms that should be considered a replacement for this term in the ontology
+		private BHashSet<int> aGOReplacementIDs = new BHashSet<int>(); // For obsolete terms, here is a suitable replacement.
 
-		private BHashSet<int> aParentIDs = new BHashSet<int>(); // A list of all parent IDs of the node.
-		private BHashSet<int> aPartOfIDs = new BHashSet<int>(); // A list of all conditional parent IDs of the node.
-		private BHashSet<int> aHasPartIDs = new BHashSet<int>(); // A list of all conditional children IDs of the node.
-		private BHashSet<int> aConsiderIDs = new BHashSet<int>(); // A list of all terms that should be considered a replacement for this term.
-		private BHashSet<GOTerm> aParents = new BHashSet<GOTerm>(); // A list of all parents of the node.
-		private BHashSet<GOTerm> aChildren = new BHashSet<GOTerm>(); // A list of all children of the node.
+		// constructed from GO
+		private bool bReferencesInitialized = false;
+		private BHashSet<int> aParentIDs = new BHashSet<int>(); // A list of all parent IDs of the node
+		private BHashSet<int> aChildrenIDs = new BHashSet<int>(); // A list of direct children of this node
+		private BHashSet<int> aAllParentIDs = new BHashSet<int>(); // A list of all parent terms
+		private int iRootNodeID = -1;
 
-		private BHashSet<int> oParentNodesCached = null; // This speeds up all parents lookups
-		private GOTerm oTopNodeCached = null; // This speeds up topmost parent lookups
+		private BHashSet<string> aKeywords = new BHashSet<string>();
 
 		public GOTerm()
-		{ }
+		{
+		}
 
 		/// <summary>
 		/// A unique ID (integer) must be specified for the GOTerm at the time of construction.
@@ -80,185 +83,85 @@ namespace IRB.Revigo.Databases
 			this.iID = id;
 		}
 
-		[XmlIgnore]
-		public GeneOntology Ontology
+		internal void InitializeTerm()
 		{
-			get
-			{
-				return this.oOntology;
-			}
-		}
+			// here we initialize first generation of parents, children and keywords
 
-		/// <summary>
-		/// Returns the main unique ID of the GOTerm.
-		/// </summary>
-		public int ID
-		{
-			get
-			{
-				return this.iID;
-			}
-			set
-			{
-				this.iID = value;
-			}
-		}
+			this.aParentIDs.Clear();
+			this.aChildrenIDs.Clear();
 
-		/// <summary>
-		/// Returns GO Term ID in the format "GO:0006915".
-		/// </summary>
-		/// <returns></returns>
-		[XmlIgnore]
-		public string FormattedID
-		{
-			get
+			// A is a child of B, and B is a parent of A
+			for (int j = 0; j < this.aGOParentIDs.Count; j++)
 			{
-				return string.Format("GO:{0:d7}", this.iID);
-			}
-		}
-
-		public GONamespaceEnum Namespace
-		{
-			get
-			{
-				return this.eNamespace;
-			}
-			set
-			{
-				this.eNamespace = value;
-			}
-		}
-
-		public string Description
-		{
-			get
-			{
-				return this.sDescription;
-			}
-			set
-			{
-				this.sDescription = value;
-			}
-		}
-
-		public string Comment
-		{
-			get
-			{
-				return this.sComment;
-			}
-			set
-			{
-				this.sComment = value;
-			}
-		}
-
-		/// <summary>
-		/// Returns a list of alternate IDs for the GOTerm.
-		/// </summary>
-		public BHashSet<int> AltIDs
-		{
-			get
-			{
-				return this.aAltIDs;
-			}
-		}
-
-		/// <summary>
-		/// Gets or sets the name of the GOTerm.
-		/// </summary>
-		/// <param name="name"></param>
-		public string Name
-		{
-			get
-			{
-				return this.sName;
-			}
-			set
-			{
-				this.sName = value;
-			}
-		}
-
-		/// <summary>
-		/// Gives back the name of the GOTerm, but without any illegal characters,
-		/// commas and spaces replaced with "_", and double quotes with single quotes.
-		/// </summary>
-		[XmlIgnore]
-		public string SafeName
-		{
-			get
-			{
-				string result = this.sName;
-
-				if (result != null)
+				if (this.oOntology.Terms.ContainsKey(this.aGOParentIDs[j]))
 				{
-					result = result.Replace('\\', '_');
-					result = result.Replace('/', '_');
-					result = result.Replace('*', '_');
-					result = result.Replace('?', '_');
-					result = result.Replace('"', '\'');
-					result = result.Replace('<', '_');
-					result = result.Replace('>', '_');
-					result = result.Replace('|', '_');
-					result = result.Replace(':', '_');
-					result = result.Replace(' ', '_');
-					result = result.Replace(',', '_');
+					GOTerm parent = this.oOntology.Terms.GetValueByKey(this.aGOParentIDs[j]);
+
+					this.aParentIDs.Add(parent.ID);
+					parent.ChildrenIDs.Add(this.iID);
+				}
+			}
+
+			// A is a child of B, but B is not always a parent of A
+			for (int j = 0; j < this.aGOPartOfIDs.Count; j++)
+			{
+				if (this.oOntology.Terms.ContainsKey(this.aGOPartOfIDs[j]))
+					this.aParentIDs.Add(this.aGOPartOfIDs[j]);
+			}
+
+			// A is a parent of B, but B is not always a child of A
+			for (int j = 0; j < this.aGOHasPartIDs.Count; j++)
+			{
+				if (this.oOntology.Terms.ContainsKey(this.aGOHasPartIDs[j]))
+					this.aChildrenIDs.Add(this.aGOHasPartIDs[j]);
+			}
+
+			this.aKeywords.Clear();
+			MakeKeywords();
+		}
+
+		internal void InitializeReferences()
+		{
+			if (!bReferencesInitialized)
+			{
+				BHashSet<int> allParentIDs = new BHashSet<int>();
+
+				foreach (int parentID in this.aParentIDs)
+				{
+					allParentIDs.Add(parentID);
+					GOTerm parent = this.oOntology.Terms.GetValueByKey(parentID);
+					if (!parent.ReferencesInitialized)
+						parent.InitializeReferences();
+
+					BHashSet<int> parentIDs = parent.AllParentIDs;
+					for (int i = 0; i < parentIDs.Count; i++)
+					{
+						allParentIDs.Add(parentIDs[i]);
+					}
 				}
 
-				return result;
+				this.aAllParentIDs = allParentIDs;
+				bReferencesInitialized = true;
+
+				GOTerm curNode = this;
+				while (!curNode.IsRootNode)
+				{
+					curNode = this.oOntology.Terms.GetValueByKey(curNode.AllParentIDs[0]);
+				}
+				this.iRootNodeID = curNode.ID;
 			}
 		}
 
-		/// <summary>
-		/// Returns a list of alternate names for the GOTerm.
-		/// </summary>
-		public List<string> AltNames
+		[XmlIgnore]
+		internal bool ReferencesInitialized 
 		{
-			get
-			{
-				return this.aAltNames;
-			}
-		}
-
-		public bool IsObsolete
-		{
-			get
-			{
-				return this.bObsolete;
-			}
-			set
-			{
-				this.bObsolete = value;
-			}
-		}
-
-		public BHashSet<int> ReplacementIDs
-		{
-			get
-			{
-				return this.aReplacementIDs;
-			}
-		}
-
-		/// <summary>
-		/// Provides a set of all words (in lowercase) used in any of the term names,
-		/// or in the term's definition.
-		/// </summary>
-		public BHashSet<string> Keywords
-		{
-			get
-			{
-				if (this.aKeywords == null)
-					MakeKeywords();
-
-				return this.aKeywords;
-			}
+			get { return bReferencesInitialized; }
+			set { this.bReferencesInitialized = value; }
 		}
 
 		private void MakeKeywords()
 		{
-			if (this.aKeywords != null)
+			if (this.aKeywords.Count > 0)
 				return;
 
 			StringBuilder sb = new StringBuilder();
@@ -271,8 +174,6 @@ namespace IRB.Revigo.Databases
 			}
 			sb.Append(" ");
 			sb.Append(this.sDescription);
-
-			BHashSet<string> oKeywords = new BHashSet<string>();
 
 			// some compounds have ',' in their name
 			string oneBigString = sb.ToString().ToLower().Replace(", ", " ");
@@ -317,11 +218,136 @@ namespace IRB.Revigo.Databases
 				// we ignore tokens of 2 characters or less
 				if (!string.IsNullOrEmpty(token) && token.Length > 2)
 				{
-					oKeywords.Add(token);
+					aKeywords.Add(token);
 				}
 			}
+		}
 
-			this.aKeywords = oKeywords;
+		[XmlIgnore]
+		public GeneOntology Ontology
+		{
+			get
+			{
+				return this.oOntology;
+			}
+		}
+
+		[XmlIgnore]
+		internal GeneOntology OntologyInternal
+		{
+			get { return this.oOntology; }
+			set { this.oOntology = value; }
+		}
+
+		/// <summary>
+		/// Returns the main unique ID of the GOTerm.
+		/// </summary>
+		public int ID
+		{
+			get { return this.iID; }
+			set { this.iID = value; }
+		}
+
+		/// <summary>
+		/// Returns GO Term ID in the format "GO:0006915".
+		/// </summary>
+		/// <returns></returns>
+		[XmlIgnore]
+		public string FormattedID
+		{
+			get { return string.Format("GO:{0:d7}", this.iID); }
+		}
+
+		public GONamespaceEnum Namespace
+		{
+			get { return this.eNamespace; }
+			set { this.eNamespace = value; }
+		}
+
+		public string Description
+		{
+			get { return this.sDescription; }
+			set { this.sDescription = value; }
+		}
+
+		public string Comment
+		{
+			get { return this.sComment; }
+			set { this.sComment = value; }
+		}
+
+		/// <summary>
+		/// Returns a list of alternate IDs for the GOTerm.
+		/// </summary>
+		public BHashSet<int> AltIDs
+		{
+			get { return this.aAltIDs; }
+		}
+
+		/// <summary>
+		/// Gets or sets the name of the GOTerm.
+		/// </summary>
+		/// <param name="name"></param>
+		public string Name
+		{
+			get { return this.sName; }
+			set { this.sName = value; }
+		}
+
+		/// <summary>
+		/// Returns a list of alternate names for the GOTerm.
+		/// </summary>
+		public List<string> AltNames
+		{
+			get { return this.aAltNames; }
+		}
+
+		public bool IsObsolete
+		{
+			get { return this.bObsolete; }
+			set { this.bObsolete = value; }
+		}
+
+		/// <summary>
+		/// Returns all the parent IDs of this GO Term as defined in the ontology
+		/// </summary>
+		public BHashSet<int> GOParentIDs
+		{
+			get { return this.aGOParentIDs; }
+		}
+
+		/// <summary>
+		/// Returns all the conditional parent IDs of this GO Term as defined in the ontology
+		/// (example: this GO Term is a child of another GO Term, but another GO Term is not a parent of this GO Term)
+		/// </summary>
+		public BHashSet<int> GOPartOfIDs
+		{
+			get { return this.aGOPartOfIDs; }
+		}
+
+		/// <summary>
+		/// Returns all the conditional children IDs of this GO Term as defined in the ontology
+		/// (example: this GO Term is a parent of another GO Term, but another GO Term is not a child of this GO Term)
+		/// </summary>
+		public BHashSet<int> GOHasPartIDs
+		{
+			get { return this.aGOHasPartIDs; }
+		}
+
+		/// <summary>
+		/// Returns all terms that should be considered as a replacement for this term as defined in the ontology
+		/// </summary>
+		public BHashSet<int> GOConsiderIDs
+		{
+			get { return this.aGOConsiderIDs; }
+		}
+
+		/// <summary>
+		/// Returns all terms that are offered as a replacement as defined in the ontology
+		/// </summary>
+		public BHashSet<int> GOReplacementIDs
+		{
+			get { return this.aGOReplacementIDs; }
 		}
 
 		/// <summary>
@@ -329,153 +355,53 @@ namespace IRB.Revigo.Databases
 		/// </summary>
 		public BHashSet<int> ParentIDs
 		{
-			get
-			{
-				return this.aParentIDs;
-			}
-		}
-
-		/// <summary>
-		/// Returns all the conditional parent IDs of this GO Term 
-		/// (example: this GO Term is a child of another GO Term, but another GO Term is not a parent of this GO Term)
-		/// </summary>
-		public BHashSet<int> PartOfIDs
-		{
-			get
-			{
-				return this.aPartOfIDs;
-			}
-		}
-
-		/// <summary>
-		/// Returns all the conditional children IDs of this GO Term 
-		/// (example: this GO Term is a parent of another GO Term, but another GO Term is not a child of this GO Term)
-		/// </summary>
-		public BHashSet<int> HasPartIDs
-		{
-			get
-			{
-				return this.aHasPartIDs;
-			}
-		}
-
-		/// <summary>
-		/// Returns all terms that should be considered as a replacement for this term 
-		/// </summary>
-		public BHashSet<int> ConsiderIDs
-		{
-			get
-			{
-				return this.aConsiderIDs;
-			}
-		}
-
-		/// <summary>
-		/// Returns the parents of this GOTerm object.
-		/// </summary>
-		[XmlIgnore]
-		public BHashSet<GOTerm> Parents
-		{
-			get
-			{
-				return this.aParents;
-			}
+			get { return this.aParentIDs; }
 		}
 
 		/// <summary>
 		/// Returns the children of this GOTerm object.
 		/// </summary>
-		[XmlIgnore]
-		public BHashSet<GOTerm> Children
+		public BHashSet<int> ChildrenIDs
 		{
-			get
-			{
-				return this.aChildren;
-			}
+			get { return this.aChildrenIDs; }
 		}
 
-		/// <summary>
-		/// Get a list of all parents for this GOTerm,
-		/// all of their parents and so on, searching recursively through the ontology.
-		/// </summary>
-		/// <returns></returns>
-		[XmlIgnore]
-		public BHashSet<int> AllParents
+		public BHashSet<int> AllParentIDs
 		{
-			get
-			{
-				if (this.oParentNodesCached == null)
-				{
-					BHashSet<int> parents = new BHashSet<int>();
-
-					foreach (GOTerm curNode in this.aParents)
-					{
-						parents.Add(curNode.ID);
-						BHashSet<int> parentIDs = curNode.AllParents;
-						for (int i = 0; i < parentIDs.Count; i++)
-						{
-							parents.Add(parentIDs[i]);
-						}
-					}
-					this.oParentNodesCached = parents;
-				}
-
-				return this.oParentNodesCached;
-			}
+			get { return this.aAllParentIDs; }
 		}
 
 		/// <summary>
 		/// Returns true if the node is a top node (if it has no parents).
 		/// </summary>
 		[XmlIgnore]
-		public bool IsTopNode
+		public bool IsRootNode
 		{
-			get
-			{
-				return this.aParents.Count == 0;
-			}
+			get { return this.aParentIDs.Count == 0; }
 		}
 
 		/// <summary>
-		/// Finds the top node of the given node (i.e. the one that has no parents.)
+		/// Finds the root node of the given node (i.e. the one that has no parents.)
 		/// </summary>
 		/// <returns></returns>
-		[XmlIgnore]
-		public GOTerm TopNode
+		public int RootNodeID
 		{
-			get
-			{
-				if (this.oTopNodeCached == null)
-				{
-					GOTerm curNode = this;
-					while (!curNode.IsTopNode)
-					{
-						curNode = curNode.aParents[0];
-					}
-					this.oTopNodeCached = curNode;
-				}
+			get { return this.iRootNodeID; }
+			set { this.iRootNodeID = value; }
+		}
 
-				return this.oTopNodeCached;
-			}
+		/// <summary>
+		/// Provides a set of all words (in lowercase) used in any of the term names,
+		/// or in the term's definition.
+		/// </summary>
+		public BHashSet<string> Keywords
+		{
+			get { return this.aKeywords; }
 		}
 
 		public bool IsChildOf(int parentID)
 		{
-			return IsChildOfHelper(parentID);
-		}
-
-		private bool IsChildOfHelper(int parentID)
-		{
-			for (int i = 0; i < this.aParents.Count; i++)
-			{
-				GOTerm parent = this.aParents[i];
-				if (parent.ID == parentID || parent.IsChildOfHelper(parentID))
-				{
-					return true;
-				}
-			}
-
-			return false;
+			return this.aAllParentIDs.Contains(parentID);
 		}
 
 		/// <summary>
@@ -486,8 +412,8 @@ namespace IRB.Revigo.Databases
 		public BHashSet<int> GetAllCommonParents(GOTerm anotherTerm)
 		{
 			BHashSet<int> result = new BHashSet<int>();
-			BHashSet<int> myParentIDs = this.AllParents;
-			BHashSet<int> anotherParentIDs = anotherTerm.AllParents;
+			BHashSet<int> myParentIDs = this.AllParentIDs;
+			BHashSet<int> anotherParentIDs = anotherTerm.AllParentIDs;
 
 			foreach (int termID in anotherParentIDs)
 			{
@@ -504,20 +430,22 @@ namespace IRB.Revigo.Databases
 		/// The returned collection does not include the given node.
 		/// </summary>
 		/// <returns></returns>
-		public BHashSet<GOTerm> GetSiblings()
+		public BHashSet<int> GetSiblings()
 		{
-			BHashSet<GOTerm> mySibs = new BHashSet<GOTerm>();
+			BHashSet<int> siblings = new BHashSet<int>();
 
-			foreach (GOTerm n in this.Parents)
+			foreach (int parentID in this.aParentIDs)
 			{
-				foreach (GOTerm child in n.Children)
+				GOTerm parent = this.oOntology.Terms.GetValueByKey(parentID);
+
+				foreach (int child in parent.ChildrenIDs)
 				{
-					mySibs.Add(child);
+					siblings.Add(child);
 				}
 			}
-			mySibs.Remove(this);
+			siblings.Remove(this.iID);
 
-			return mySibs;
+			return siblings;
 		}
 
 		/// <summary>

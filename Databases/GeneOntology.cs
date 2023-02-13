@@ -28,8 +28,6 @@ namespace IRB.Revigo.Databases
 	/// 	and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
 	/// 	subject to the following conditions: 
 	/// 	The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-	/// 	The names of authors and contributors may not be used to endorse or promote Software products derived from this software 
-	/// 	without specific prior written permission.
 	/// 	
 	/// 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
 	/// 	INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
@@ -56,10 +54,10 @@ namespace IRB.Revigo.Databases
 		/// Accepts also the old style GeneOntology file with .obo-xml extension
 		/// </summary>
 		/// <param name="stream"></param>
-		public GeneOntology(string goPath)
+		public GeneOntology(string path)
 		{
 			StreamReader linkReader = null;
-			string sLinkPath = string.Format("{0}.{1}link.txt", Path.GetDirectoryName(goPath), Path.DirectorySeparatorChar);
+			string sLinkPath = string.Format("{0}.{1}link.txt", Path.GetDirectoryName(path), Path.DirectorySeparatorChar);
 			if (File.Exists(sLinkPath))
 			{
 				try
@@ -79,16 +77,16 @@ namespace IRB.Revigo.Databases
 			}
 
 			StreamReader goReader = null;
-			string sGOFileName = Path.GetFileName(goPath);
+			string sGOFileName = Path.GetFileName(path);
 
 			if (Path.GetExtension(sGOFileName).Equals(".gz", StringComparison.CurrentCultureIgnoreCase))
 			{
-				goReader = new StreamReader(new GZipStream(new BufferedStream(new FileStream(goPath, FileMode.Open, FileAccess.Read, FileShare.Read), 65536), CompressionMode.Decompress));
+				goReader = new StreamReader(new GZipStream(new BufferedStream(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read), 65536), CompressionMode.Decompress));
 				sGOFileName = Path.GetFileNameWithoutExtension(sGOFileName);
 			}
 			else
 			{
-				goReader = new StreamReader(new BufferedStream(new FileStream(goPath, FileMode.Open, FileAccess.Read, FileShare.Read), 65536));
+				goReader = new StreamReader(new BufferedStream(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read), 65536));
 			}
 
 			switch (Path.GetExtension(sGOFileName).ToLower())
@@ -109,10 +107,10 @@ namespace IRB.Revigo.Databases
 			for (int i = 0; i < this.aTerms.Count; i++)
 			{
 				GOTerm curTerm = this.aTerms[i].Value;
-				if (curTerm.IsObsolete && curTerm.ReplacementIDs.Count > 0)
+				if (curTerm.IsObsolete && curTerm.GOReplacementIDs.Count > 0)
 				{
-					// use first replacemnet term
-					GOTerm replTerm = this.aTerms.GetValueByKey(curTerm.ReplacementIDs[0]);
+					// use first replacement term
+					GOTerm replTerm = this.aTerms.GetValueByKey(curTerm.GOReplacementIDs[0]);
 					replTerm.AltIDs.Add(curTerm.ID);
 					replTerm.AltIDs.AddRange((IEnumerable<int>)curTerm.AltIDs);
 
@@ -132,51 +130,23 @@ namespace IRB.Revigo.Databases
 				}
 			}
 
-			this.AddKeywordsFromUniprotKeywords(string.Format("{0}.{1}keywlist.txt",
-				Path.GetDirectoryName(goPath), Path.DirectorySeparatorChar));
-
-			InitializeGO();
+			InitializeGO(path);
 		}
 
-		protected void InitializeGO()
+		private void InitializeGO(string path)
 		{
 			// Assign parents and children to all GOTerms
 			for (int i = 0; i < this.aTerms.Count; i++)
 			{
-				GOTerm curTerm = this.aTerms[i].Value;
-
-				// A is a child of B, and B is a parent of A
-				for (int j = 0; j < curTerm.ParentIDs.Count; j++)
-				{
-					GOTerm parent = this.aTerms.GetValueByKey(curTerm.ParentIDs[j]);
-
-					curTerm.Parents.Add(parent);
-					parent.Children.Add(curTerm);
-				}
-
-				// A is a child of B, but B is not always a parent of A
-				for (int j = 0; j < curTerm.PartOfIDs.Count; j++)
-				{
-					GOTerm parent = this.aTerms.GetValueByKey(curTerm.PartOfIDs[j]);
-
-					curTerm.Parents.Add(parent);
-				}
-
-				// A is a parent of B, but B is not always a child of A
-				for (int j = 0; j < curTerm.HasPartIDs.Count; j++)
-				{
-					GOTerm child = this.aTerms.GetValueByKey(curTerm.HasPartIDs[j]);
-
-					curTerm.Children.Add(child);
-				}
+				this.aTerms[i].Value.InitializeTerm();
 			}
 
-			// Cache Keywords, AllParents, TopmostParent properties
+			this.AddKeywordsFromUniprotKeywords(string.Format("{0}.{1}keywlist.txt", Path.GetDirectoryName(path), Path.DirectorySeparatorChar));
+
+			// Cache AllParents, RootNode properties
 			for (int i = 0; i < this.aTerms.Count; i++)
 			{
-				BHashSet<string> keyw = this.aTerms[i].Value.Keywords;
-				BHashSet<int> parents = this.aTerms[i].Value.AllParents;
-				GOTerm top = this.aTerms[i].Value.TopNode;
+				this.aTerms[i].Value.InitializeReferences();
 			}
 		}
 
@@ -293,15 +263,15 @@ namespace IRB.Revigo.Databases
 						case "consider":
 							if (sItemValue.StartsWith("go:", StringComparison.CurrentCultureIgnoreCase))
 							{
-								oCurrentTerm.ConsiderIDs.Add(ParseGOID(sItemValue));
+								oCurrentTerm.GOConsiderIDs.Add(ParseGOID(sItemValue));
 							}
 							break;
 						case "replaced_by":
-							oCurrentTerm.ReplacementIDs.Add(ParseGOID(sItemValue));
+							oCurrentTerm.GOReplacementIDs.Add(ParseGOID(sItemValue));
 							break;
 						case "is_a":
 						case "to":
-							oCurrentTerm.ParentIDs.Add(ParseGOID(sItemValue));
+							oCurrentTerm.GOParentIDs.Add(ParseGOID(sItemValue));
 							break;
 						case "relationship":
 							// we currently care only for part_of relation
@@ -313,10 +283,10 @@ namespace IRB.Revigo.Databases
 							switch (asTemp[0].ToLower())
 							{
 								case "part_of":
-									oCurrentTerm.PartOfIDs.Add(ParseGOID(asTemp[1]));
+									oCurrentTerm.GOPartOfIDs.Add(ParseGOID(asTemp[1]));
 									break;
 								case "has_part":
-									oCurrentTerm.HasPartIDs.Add(ParseGOID(asTemp[1]));
+									oCurrentTerm.GOHasPartIDs.Add(ParseGOID(asTemp[1]));
 									break;
 								case "regulates":
 								case "negatively_regulates":
@@ -466,11 +436,11 @@ namespace IRB.Revigo.Databases
 									}
 									break;
 								case "replaced_by":
-									oCurrentTerm.ReplacementIDs.Add(ParseGOID(sTagValue));
+									oCurrentTerm.GOReplacementIDs.Add(ParseGOID(sTagValue));
 									break;
 								case "is_a":
 								case "to":
-									oCurrentTerm.ParentIDs.Add(ParseGOID(sTagValue));
+									oCurrentTerm.GOParentIDs.Add(ParseGOID(sTagValue));
 									break;
 							}
 						}
@@ -771,7 +741,12 @@ namespace IRB.Revigo.Databases
 		{
 			XmlSerializer ser = new XmlSerializer(typeof(GeneOntology));
 			GeneOntology newObj = (GeneOntology)ser.Deserialize(reader);
-			newObj.InitializeGO();
+			for (int i = 0; i < newObj.Terms.Count;i++)
+			{
+				GOTerm term = newObj.Terms[i].Value;
+				term.ReferencesInitialized = true;
+				term.OntologyInternal = newObj;
+			}
 
 			return newObj;
 		}

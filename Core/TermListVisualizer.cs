@@ -384,7 +384,7 @@ namespace IRB.Revigo.Core
 				for (int j = i + 1; j < iTermCount; j++)
 				{
 					double propY = this.aProperties[j].TransformedValue;
-					double dSimilarity = Math.Round(oMatrix.Matrix[i, j], 8);
+					double dSimilarity = Math.Round(oMatrix.GetValue(i, j), 8);
 
 					if ((double.IsNaN(propX) || double.IsNaN(propY) || Math.Sign(propX) == Math.Sign(propY)) && dSimilarity > -1.0)
 					{
@@ -624,7 +624,7 @@ namespace IRB.Revigo.Core
 
 				for (int j = i + 1; j < iTermsCount; j++)
 				{
-					double value = this.oMatrix.Matrix[aMDSTerms[i], aMDSTerms[j]];
+					double value = this.oMatrix.GetValue(aMDSTerms[i], aMDSTerms[j]);
 
 					if (token.IsCancellationRequested)
 						return false;
@@ -873,7 +873,7 @@ namespace IRB.Revigo.Core
 							continue;
 					}
 
-					double simil = this.oMatrix.Matrix[i, j];
+					double simil = this.oMatrix.GetValue(i, j);
 					aSimilarities[iSimilarityCount++] = simil;
 				}
 
@@ -937,7 +937,7 @@ namespace IRB.Revigo.Core
 							continue;
 					}
 
-					double simil = this.oMatrix.Matrix[i, j];
+					double simil = this.oMatrix.GetValue(i, j);
 
 					if (simil >= threshold)
 					{

@@ -716,7 +716,7 @@ namespace IRB.Revigo.Databases
 				}
 
 				// do our thing, assign annotations
-				BHashSet<int> allTermParents = this.oOntology.Terms.GetValueByKey(termID).AllParents;
+				BHashSet<int> allTermParents = this.oOntology.Terms.GetValueByKey(termID).AllParentIDs;
 
 				if (!alreadyAnnotated.Contains(termID))
 				{
@@ -824,9 +824,9 @@ namespace IRB.Revigo.Databases
 				for (int i = 0; i < this.oAnnotations.Count; i++)
 				{
 					int termID = this.oAnnotations[i].Key;
-					GOTerm rootGOTerm = this.oOntology.Terms.GetValueByKey(termID).TopNode;
+					int rootID = this.oOntology.Terms.GetValueByKey(termID).RootNodeID;
 
-					this.oNormalizedAnnotations.Add(termID, (double)this.oAnnotations[i].Value / (double)this.oAnnotations.GetValueByKey(rootGOTerm.ID));
+					this.oNormalizedAnnotations.Add(termID, (double)this.oAnnotations[i].Value / (double)this.oAnnotations.GetValueByKey(rootID));
 					this.dProgress = (double)i * dProgressStep;
 				}
 

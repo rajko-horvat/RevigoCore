@@ -34,8 +34,8 @@ namespace IRB.Revigo.Core
 	{
 		private TermListVisualizer oParent = null;
 
-		private double[,] aMatrix = null;
-		//private double[] aMatrix1 = null;
+		//private double[,] aMatrix = null;
+		private double[] aMatrix1 = null;
 
 		/// <summary>
 		/// Constructs a distance matrix of all the GO terms present in termList.
@@ -71,15 +71,15 @@ namespace IRB.Revigo.Core
 			}
 		}
 
-		public double[,] Matrix
+		/*public double[,] Matrix
 		{
 			get
 			{
 				return this.aMatrix;
 			}
-		}
+		}*/
 
-		/*public double GetValue(int row, int column)
+		public double GetValue(int row, int column)
 		{
 			if (row == column)
 				return 1.0;
@@ -94,7 +94,7 @@ namespace IRB.Revigo.Core
 			}
 
 			return this.aMatrix1[(iColumn * (iColumn + 1)) / 2 + iRow];
-		}*/
+		}
 
 		private void ConstructMatrix(CancellationToken? token, ProgressEventHandler progress)
 		{
@@ -105,10 +105,11 @@ namespace IRB.Revigo.Core
 			int iTermCount = terms.Length;
 			double dProgressStep = 100.0 / (double)iTermCount;
 			double dOldProgress = 0.0;
-			this.aMatrix = new double[iTermCount, iTermCount];
-			//this.aMatrix1 = new double[(iTermCount * (iTermCount + 1)) / 2 - iTermCount];
+			//this.aMatrix = new double[iTermCount, iTermCount];
+			this.aMatrix1 = new double[((iTermCount - 1) * iTermCount) / 2];
 
-			/*for (int i = 1; i < iTermCount; i++)
+			// reduces memory consumption by half
+			for (int i = 1; i < iTermCount; i++)
 			{
 				GOTerm go1 = terms[i];
 
@@ -124,9 +125,9 @@ namespace IRB.Revigo.Core
 					dOldProgress = dProgress;
 					progress(this, new ProgressEventArgs(dProgress));
 				}
-			}*/
+			}
 
-			for (int i = 0; i < iTermCount; i++)
+			/*for (int i = 0; i < iTermCount; i++)
 			{
 				GOTerm go1 = terms[i];
 
@@ -153,7 +154,7 @@ namespace IRB.Revigo.Core
 					dOldProgress = dProgress;
 					progress(this, new ProgressEventArgs(dProgress));
 				}
-			}
+			}*/
 
 			// compare two matrices
 			/*for (int i = 0; i < iTermCount; i++)
@@ -248,7 +249,7 @@ namespace IRB.Revigo.Core
 						return;
 					}
 
-					double dValue = this.Matrix[i, j];
+					double dValue = this.GetValue(i, j);
 					if (i != j && !double.IsNaN(dValue))
 					{
 						sum += dValue;

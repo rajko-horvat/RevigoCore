@@ -149,17 +149,17 @@ namespace IRB.Revigo.Databases
 				// look at sizes of all siblings, and average them to guess the
 				// frequency of the term
 				GOTerm curTerm = myGo.Terms.GetValueByKey(goId);
-				BHashSet<GOTerm> sibs = curTerm.GetSiblings();
+				BHashSet<int> siblings = curTerm.GetSiblings();
 				int numUsableSibs = 0;
 				int sumOfSizesOfUsableSibs = 0;
 
-				foreach (GOTerm sib in sibs)
+				foreach (int siblingID in siblings)
 				{
-					if (this.oAnnotations.ContainsKey(sib.ID)
-							&& this.oAnnotations.GetValueByKey(sib.ID) > 0)
+					if (this.oAnnotations.ContainsKey(siblingID)
+							&& this.oAnnotations.GetValueByKey(siblingID) > 0)
 					{
 						numUsableSibs++;
-						sumOfSizesOfUsableSibs += this.oAnnotations.GetValueByKey(sib.ID);
+						sumOfSizesOfUsableSibs += this.oAnnotations.GetValueByKey(siblingID);
 					}
 				}
 				if (numUsableSibs >= 1)
@@ -169,15 +169,15 @@ namespace IRB.Revigo.Databases
 				}
 
 				// no usable siblings? try frequency of largest child
-				BHashSet<GOTerm> children = curTerm.Children;
+				BHashSet<int> children = curTerm.ChildrenIDs;
 				int sizeOfBiggestChild = 0;
 
-				foreach (GOTerm child in children)
+				foreach (int childID in children)
 				{
-					if (this.oAnnotations.ContainsKey(child.ID))
+					if (this.oAnnotations.ContainsKey(childID))
 					{
-						if (this.oAnnotations.GetValueByKey(child.ID) > sizeOfBiggestChild)
-							sizeOfBiggestChild = this.oAnnotations.GetValueByKey(child.ID);
+						if (this.oAnnotations.GetValueByKey(childID) > sizeOfBiggestChild)
+							sizeOfBiggestChild = this.oAnnotations.GetValueByKey(childID);
 					}
 				}
 				if (sizeOfBiggestChild > 0)
@@ -187,12 +187,12 @@ namespace IRB.Revigo.Databases
 				}
 
 				// no usable children? try frequency of smallest parent (EXCLUDING GO ROOT TERMS!!!)
-				BHashSet<int> parentIDs = curTerm.AllParents;
+				BHashSet<int> parentIDs = curTerm.AllParentIDs;
 				int sizeOfSmallestParent = int.MaxValue;
 
 				foreach (int parentID in parentIDs)
 				{
-					if (myGo.Terms.GetValueByKey(parentID).IsTopNode)
+					if (myGo.Terms.GetValueByKey(parentID).IsRootNode)
 						continue;
 
 					if (this.oAnnotations.ContainsKey(parentID))
@@ -240,26 +240,26 @@ namespace IRB.Revigo.Databases
 			}
 
 			GOTerm curTerm = myGo.Terms.GetValueByKey(goId);
-			BHashSet<GOTerm> sibs = curTerm.GetSiblings();
+			BHashSet<int> siblings = curTerm.GetSiblings();
 			int numUsableSibs = 0;
 			double sumOfFreqsOfUsableSibs = 0.0;
 
-			foreach (GOTerm sib in sibs)
+			foreach (int sibling in siblings)
 			{
 				// Added by rhorvat at 5.3.2022. - For this to work properly we have to define Normalized annotations for all siblings and all children
 				// prevent recursion with missingTerms array
-				if (!this.oNormalizedAnnotations.ContainsKey(sib.ID) && !missingTerms.Contains(sib.ID))
+				if (!this.oNormalizedAnnotations.ContainsKey(sibling) && !missingTerms.Contains(sibling))
 				{
-					missingTerms.Add(sib.ID);
-					CalculateTermFrequency(sib.ID, myGo, missingTerms);
+					missingTerms.Add(sibling);
+					CalculateTermFrequency(sibling, myGo, missingTerms);
 				}
 
-				if (this.oNormalizedAnnotations.ContainsKey(sib.ID) &&
-					this.oNormalizedAnnotations.GetValueByKey(sib.ID) > 0 &&
-					!Double.IsNaN(this.oNormalizedAnnotations.GetValueByKey(sib.ID)))
+				if (this.oNormalizedAnnotations.ContainsKey(sibling) &&
+					this.oNormalizedAnnotations.GetValueByKey(sibling) > 0 &&
+					!Double.IsNaN(this.oNormalizedAnnotations.GetValueByKey(sibling)))
 				{
 					numUsableSibs++;
-					sumOfFreqsOfUsableSibs += this.oNormalizedAnnotations.GetValueByKey(sib.ID);
+					sumOfFreqsOfUsableSibs += this.oNormalizedAnnotations.GetValueByKey(sibling);
 				}
 			}
 			if (numUsableSibs >= 1)
@@ -269,24 +269,24 @@ namespace IRB.Revigo.Databases
 			}
 
 			// no usable siblings? try frequency of largest child
-			BHashSet<GOTerm> children = curTerm.Children;
+			BHashSet<int> children = curTerm.ChildrenIDs;
 			double freqOfBiggestChild = 0.0;
 
-			foreach (GOTerm child in children)
+			foreach (int childID in children)
 			{
 				// Added by rhorvat at 5.3.2022. - For this to work properly we have to define Normalized annotations for all siblings and all children
 				// prevent recursion with missingTerms array
-				if (!this.oNormalizedAnnotations.ContainsKey(child.ID) && !missingTerms.Contains(child.ID))
+				if (!this.oNormalizedAnnotations.ContainsKey(childID) && !missingTerms.Contains(childID))
 				{
-					missingTerms.Add(child.ID);
-					CalculateTermFrequency(child.ID, myGo, missingTerms);
+					missingTerms.Add(childID);
+					CalculateTermFrequency(childID, myGo, missingTerms);
 				}
 
-				if (this.oNormalizedAnnotations.ContainsKey(child.ID) &&
-					!Double.IsNaN(this.oNormalizedAnnotations.GetValueByKey(child.ID)))
+				if (this.oNormalizedAnnotations.ContainsKey(childID) &&
+					!Double.IsNaN(this.oNormalizedAnnotations.GetValueByKey(childID)))
 				{
-					if (this.oNormalizedAnnotations.GetValueByKey(child.ID) > freqOfBiggestChild)
-						freqOfBiggestChild = this.oNormalizedAnnotations.GetValueByKey(child.ID);
+					if (this.oNormalizedAnnotations.GetValueByKey(childID) > freqOfBiggestChild)
+						freqOfBiggestChild = this.oNormalizedAnnotations.GetValueByKey(childID);
 				}
 			}
 			if (freqOfBiggestChild > 0.0)
@@ -296,12 +296,12 @@ namespace IRB.Revigo.Databases
 			}
 
 			// no usable children? try frequency of smallest parent (EXCLUDING GO ROOT TERMS!!!)
-			BHashSet<int> parentIDs = curTerm.AllParents;
+			BHashSet<int> parentIDs = curTerm.AllParentIDs;
 			double freqOfSmallestParent = double.MaxValue;
 
 			foreach (int parentID in parentIDs)
 			{
-				if (myGo.Terms.GetValueByKey(parentID).IsTopNode)
+				if (myGo.Terms.GetValueByKey(parentID).IsRootNode)
 					continue;
 
 				// Added by rhorvat at 5.3.2022. - For this to work properly we have to define Normalized annotations for all siblings and all children

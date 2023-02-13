@@ -692,16 +692,16 @@ namespace IRB.Revigo.Worker
 						{
 							if (!aObsoleteTerms.Contains(oGOTerm))
 							{
-								if (oGOTerm.ConsiderIDs.Count > 0)
+								if (oGOTerm.GOConsiderIDs.Count > 0)
 								{
 									StringBuilder sbTemp = new StringBuilder();
 									sbTemp.AppendFormat("The GO term {0} is obsolete ({1}). Consider replacing it with one of the alternative GO term(s): ",
 										oGOTerm.ID, oGOTerm.Comment);
-									for (int i = 0; i < oGOTerm.ConsiderIDs.Count; i++)
+									for (int i = 0; i < oGOTerm.GOConsiderIDs.Count; i++)
 									{
 										if (i > 0)
 											sbTemp.Append(", ");
-										sbTemp.Append(oGOTerm.ConsiderIDs[i]);
+										sbTemp.Append(oGOTerm.GOConsiderIDs[i]);
 									}
 									sbTemp.Append(".");
 									this.aWarnings.Add(sbTemp.ToString());
