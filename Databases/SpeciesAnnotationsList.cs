@@ -42,7 +42,7 @@ namespace IRB.Revigo.Databases
 	public class SpeciesAnnotationsList
 	{
 		private DateTime dtDate = new DateTime(0);
-		private string sLink = null;
+		private string? sLink = null;
 		private List<SpeciesAnnotations> aItems = new List<SpeciesAnnotations>();
 
 		public SpeciesAnnotationsList()
@@ -89,14 +89,13 @@ namespace IRB.Revigo.Databases
 			StreamWriter log = new StreamWriter(string.Format("{0}{1}TermSizes.log", Path.GetDirectoryName(goaPath), Path.DirectorySeparatorChar));
 
 			#region Parse GOA Link
-			StreamReader linkReader = null;
 			string sLinkPath = string.Format("{0}{1}link.txt", Path.GetDirectoryName(goaPath), Path.DirectorySeparatorChar);
 			if (File.Exists(sLinkPath))
 			{
 				try
 				{
-					linkReader = new StreamReader(sLinkPath);
-					string sLine = null;
+					StreamReader linkReader = new StreamReader(sLinkPath);
+					string? sLine = null;
 
 					while (string.IsNullOrEmpty(sLine) && !linkReader.EndOfStream)
 					{
@@ -249,7 +248,7 @@ namespace IRB.Revigo.Databases
 			int iTaxonPosition = 0;
 			int iBatchTaxonPosition = 0;
 
-			
+
 			dProgressPos = 0.0;
 			dProgressStep = 100.0 / aSpeciesTaxons.Length;
 
@@ -282,9 +281,11 @@ namespace IRB.Revigo.Databases
 					if (bFirst && !aSpeciesAnnotationsWorkers[i].Working)
 					{
 						// Merge results
-						SpeciesAnnotations speciesAnnotations = aSpeciesAnnotationsWorkers[i].SpeciesAnnotations;
-						oSpeciesAnnotationsObjects.Add(speciesAnnotations.TaxonID, speciesAnnotations);
-
+						SpeciesAnnotations? speciesAnnotations = aSpeciesAnnotationsWorkers[i].SpeciesAnnotations;
+						if (speciesAnnotations != null)
+						{
+							oSpeciesAnnotationsObjects.Add(speciesAnnotations.TaxonID, speciesAnnotations);
+						}
 						iTaxonPosition++;
 						aSpeciesAnnotationsWorkers.RemoveAt(i);
 						i--;
@@ -383,14 +384,14 @@ namespace IRB.Revigo.Databases
 		private static void ParseNCBI(string path, BDictionary<int, string> names)
 		{
 			int iOldTaxonID = -1;
-			string sSpeciesName = null;
+			string? sSpeciesName = null;
 			bool bScientificName = false;
 
 			StreamReader ncbiReader = new StreamReader(path);
 
 			while (!ncbiReader.EndOfStream)
 			{
-				string sLine = ncbiReader.ReadLine();
+				string? sLine = ncbiReader.ReadLine();
 				if (string.IsNullOrEmpty(sLine))
 					continue;
 
@@ -447,7 +448,7 @@ namespace IRB.Revigo.Databases
 			private long lBatchEnd;
 
 			private bool bWorking = false;
-			private Thread oWorker = null;
+			private Thread? oWorker = null;
 
 			private DateTime dtGoaDate = DateTime.MinValue;
 			private double dProgress = 0.0;
@@ -471,14 +472,12 @@ namespace IRB.Revigo.Databases
 				// synchronize with new line, discard the first line as its start is unpredictable
 				goaReader.ReadLine();
 
-				string sLastObjectID = null;
-				string sLastLine = null;
+				string? sLastObjectID = null;
 
 				while (!goaReader.EndOfStream)
 				{
 					long lGOAPosition = goaReader.Position; // get the position of the current line
 					string sLine = goaReader.ReadLine();
-					sLastLine = sLine;
 
 					if (sLine != null)
 						sLine = sLine.Trim();
@@ -573,11 +572,11 @@ namespace IRB.Revigo.Databases
 				FileStream goaStream = new FileStream(this.sPath, FileMode.Open, FileAccess.Read, FileShare.Read);
 				goaStream.Seek(this.lBatchStart, SeekOrigin.Begin);
 				BufferedReader goaReader = new BufferedReader(goaStream, 524288);
-				
+
 				double dProgressStep = 100.0 / (double)(((this.lBatchEnd < 0) ? goaReader.Length : this.lBatchEnd) - this.lBatchStart);
 
 				bool bHeader = this.lBatchStart == 0;
-				string sLastObjectID = null;
+				string? sLastObjectID = null;
 				int iLastGOID = -1;
 
 				this.oSpeciesAnnotations.Clear();
@@ -629,7 +628,7 @@ namespace IRB.Revigo.Databases
 
 					// for debugging, remove afterwards
 					//if (aSpeciesTaxons.Length > 1)
-						//continue;
+					//continue;
 
 					if (!int.TryParse(aColumns[4].Substring(3), out iGOID))
 					{
@@ -653,7 +652,7 @@ namespace IRB.Revigo.Databases
 					// for this to work, the annotations for different genes have to be contiguous
 					if (!aColumns[1].Equals(sLastObjectID, StringComparison.CurrentCultureIgnoreCase))
 					{
-						for (int i = 0; i < oSpeciesAlreadyAnnotated.Count;i++ )
+						for (int i = 0; i < oSpeciesAlreadyAnnotated.Count; i++)
 						{
 							BHashSet<int> aBuffer = oSpeciesAlreadyAnnotated[i].Value;
 
@@ -766,10 +765,10 @@ namespace IRB.Revigo.Databases
 			private BDictionary<int, double> oNormalizedAnnotations;
 
 			// resulting object
-			private SpeciesAnnotations oSpeciesAnnotations = null;
+			private SpeciesAnnotations? oSpeciesAnnotations = null;
 
 			private bool bWorking = false;
-			private Thread oWorker = null;
+			private Thread? oWorker = null;
 			private double dProgress = 0.0;
 
 			public SpeciesAnnotationsBatchWorker(GeneOntology ontology, int taxonID, string speciesName, BDictionary<int, int> annotations)
@@ -781,7 +780,7 @@ namespace IRB.Revigo.Databases
 				this.oNormalizedAnnotations = new BDictionary<int, double>(this.oAnnotations.Count);
 			}
 
-			public SpeciesAnnotations SpeciesAnnotations
+			public SpeciesAnnotations? SpeciesAnnotations
 			{
 				get
 				{
@@ -850,7 +849,7 @@ namespace IRB.Revigo.Databases
 			}
 		}
 
-		public string Link
+		public string? Link
 		{
 			get
 			{
@@ -866,11 +865,11 @@ namespace IRB.Revigo.Databases
 		{
 			get
 			{
-				return this.aItems; 
+				return this.aItems;
 			}
 		}
 
-		public SpeciesAnnotations GetByID(int id)
+		public SpeciesAnnotations? GetByID(int id)
 		{
 			for (int i = 0; i < this.aItems.Count; i++)
 			{
@@ -901,7 +900,7 @@ namespace IRB.Revigo.Databases
 			this.aItems.Sort(CompareSpeciesAnnotationsByName);
 		}
 
-		private static int CompareSpeciesAnnotationsByName(SpeciesAnnotations obj1, SpeciesAnnotations obj2)
+		private static int CompareSpeciesAnnotationsByName(SpeciesAnnotations? obj1, SpeciesAnnotations? obj2)
 		{
 			if (obj1 == null && obj2 == null)
 			{
@@ -928,6 +927,11 @@ namespace IRB.Revigo.Databases
 			{
 				return 1;
 			}
+
+			if (obj1.SpeciesName == null && obj2.SpeciesName == null)
+				return 0;
+			if (obj1.SpeciesName == null)
+				return -1;
 
 			return obj1.SpeciesName.CompareTo(obj2.SpeciesName);
 		}
@@ -961,7 +965,7 @@ namespace IRB.Revigo.Databases
 			{
 				reader = new StreamReader(new BufferedStream(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read), 65536));
 			}
-			
+
 			SpeciesAnnotationsList oAnnotations = Deserialize(reader);
 
 			reader.Close();
@@ -977,7 +981,10 @@ namespace IRB.Revigo.Databases
 		public static SpeciesAnnotationsList Deserialize(StreamReader reader)
 		{
 			XmlSerializer ser = new XmlSerializer(typeof(SpeciesAnnotationsList));
-			SpeciesAnnotationsList newObj = (SpeciesAnnotationsList)ser.Deserialize(reader);
+			object? obj = ser.Deserialize(reader);
+			if (obj == null)
+				throw new Exception("Can't deserialize SpeciesAnnotationsList object");
+			SpeciesAnnotationsList newObj = (SpeciesAnnotationsList)obj;
 			newObj.SortByName();
 
 			return newObj;

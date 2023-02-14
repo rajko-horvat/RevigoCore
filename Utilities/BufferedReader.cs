@@ -30,8 +30,8 @@ using System.Text;
 /// </summary>
 public sealed class BufferedReader : IDisposable
 {
-	private FileStream oStream;
-	private byte[] aBuffer;
+	private FileStream? oStream;
+	private byte[]? aBuffer;
 	private int iReadPosition = 0;
 	private int iReadLength = 0;
 	private long lFilePosition = 0;
@@ -116,7 +116,7 @@ public sealed class BufferedReader : IDisposable
 		this.aBuffer = null;
 	}
 
-	public FileStream UnderlyingStream
+	public FileStream? UnderlyingStream
 	{
 		get
 		{
@@ -128,6 +128,9 @@ public sealed class BufferedReader : IDisposable
 	{
 		get
 		{
+			if (this.aBuffer == null)
+				return 0;
+
 			return this.aBuffer.Length;
 		}
 	}
@@ -212,9 +215,12 @@ public sealed class BufferedReader : IDisposable
 
 	private void ReadBufferFromStream()
 	{
-		int byteCount = this.oStream.Read(this.aBuffer, 0, this.aBuffer.Length);
-		this.iReadLength = byteCount;
-		this.iReadPosition = 0;
+		if (this.oStream != null && this.aBuffer != null)
+		{
+			int byteCount = this.oStream.Read(this.aBuffer, 0, this.aBuffer.Length);
+			this.iReadLength = byteCount;
+			this.iReadPosition = 0;
+		}
 	}
 
 	/// <summary>Copies bytes from the current buffered stream to an array.</summary>
@@ -244,6 +250,8 @@ public sealed class BufferedReader : IDisposable
 
 		if (this.oStream == null)
 			throw new Exception("The stream is closed, cannot read or cannot seek");
+		if (this.aBuffer == null)
+			throw new Exception("The buffer is empty, cannot read or cannot seek");
 
 		int iRead = 0;
 		while (iRead < count)
@@ -256,7 +264,7 @@ public sealed class BufferedReader : IDisposable
 				this.lFilePosition += iBufferCount;
 				this.iReadPosition += iBufferCount;
 			}
-			else if(this.iReadPosition == this.aBuffer.Length)
+			else if (this.iReadPosition == this.aBuffer.Length)
 			{
 				ReadBufferFromStream();
 				if (this.iReadPosition == this.aBuffer.Length)
@@ -277,6 +285,8 @@ public sealed class BufferedReader : IDisposable
 	{
 		if (this.oStream == null)
 			throw new Exception("The stream is closed, cannot read or cannot seek");
+		if (this.aBuffer == null)
+			throw new Exception("The buffer is empty, cannot read or cannot seek");
 
 		if (this.iReadPosition == this.iReadLength)
 		{
@@ -294,6 +304,8 @@ public sealed class BufferedReader : IDisposable
 	{
 		if (this.oStream == null)
 			throw new Exception("The stream is closed, cannot read or cannot seek");
+		if (this.aBuffer == null)
+			throw new Exception("The buffer is empty, cannot read or cannot seek");
 
 		if (this.iReadPosition == this.iReadLength)
 		{

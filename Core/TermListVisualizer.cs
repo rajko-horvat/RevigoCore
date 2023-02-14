@@ -57,7 +57,7 @@ namespace IRB.Revigo.Core
 	/// </summary>
 	public class TermListVisualizer
 	{
-		private RevigoWorker oParent = null;
+		private RevigoWorker oParent;
 		private GONamespaceEnum eNamespace;
 
 		private GOTerm[] aTerms;
@@ -77,18 +77,18 @@ namespace IRB.Revigo.Core
 		public static int MaxAllowedGOListSize = 2000;
 
 		// similarity matrix
-		private TermSimilarityMatrix oMatrix = null;
+		private TermSimilarityMatrix? oMatrix = null;
 
 		// results
 		private bool bMDSError = false;
-		private OntoloGraph oOntoloGraph = null;
+		private OntoloGraph? oOntoloGraph = null;
 
 		// progress
 		private double dProgressPos = 0.0;
 		private double dProgressSlice = 0.0;
 
 		// events
-		private ProgressEventHandler OnProgress = null;
+		private ProgressEventHandler OnProgress;
 
 		/// <summary>
 		/// Requires that a List of GOTerms is provided, as
@@ -105,7 +105,7 @@ namespace IRB.Revigo.Core
 		/// <param name="orgsInTotal">I don't remember what this was for; it isn't used for
 		/// any calculations, it is just output as-is to Weka Instances.</param>
 		public TermListVisualizer(RevigoWorker parent, GONamespaceEnum goNamespace,
-			GOTerm[] terms, BDictionary<int, GOTermProperties> properties, CancellationToken token, ProgressEventHandler progressHandler)
+			GOTerm[] terms, BDictionary<int, GOTermProperties> properties, CancellationToken? token, ProgressEventHandler progressHandler)
 		{
 			this.oParent = parent;
 			this.eNamespace = goNamespace;
@@ -162,7 +162,7 @@ namespace IRB.Revigo.Core
 		}
 
 		// results
-		public TermSimilarityMatrix Matrix
+		public TermSimilarityMatrix? Matrix
 		{
 			get
 			{
@@ -178,7 +178,7 @@ namespace IRB.Revigo.Core
 			}
 		}
 
-		public OntoloGraph SimpleOntologram
+		public OntoloGraph? SimpleOntologram
 		{
 			get
 			{
@@ -186,7 +186,7 @@ namespace IRB.Revigo.Core
 			}
 		}
 
-		private void ConstructMatrix(CancellationToken token)
+		private void ConstructMatrix(CancellationToken? token)
 		{
 			this.dProgressPos = 0.0;
 			this.dProgressSlice = 20.0;
@@ -214,11 +214,14 @@ namespace IRB.Revigo.Core
 		/// </ul>
 		/// </summary>
 		/// <returns>True if MDS error was encountered</returns>
-		private void MakeOntologram(CancellationToken token)
+		private void MakeOntologram(CancellationToken? token)
 		{
 			RandomMT19937 oRnd = new RandomMT19937(18012021);
 			GeneOntology oOntology = this.oParent.Ontology;
-			SpeciesAnnotations oAnnotations = this.oParent.Annotations;
+			SpeciesAnnotations? oAnnotations = this.oParent.Annotations;
+
+			if (oAnnotations == null)
+				return;
 
 			if (this.oMatrix == null)
 				throw new Exception("The matrix for the TermListVisualizer is not contructed");
@@ -277,7 +280,10 @@ namespace IRB.Revigo.Core
 				return;
 
 			GeneOntology oOntology = this.oParent.Ontology;
-			SpeciesAnnotations oAnnotations = this.oParent.Annotations;
+			SpeciesAnnotations? oAnnotations = this.oParent.Annotations;
+
+			if (oAnnotations == null)
+				return;
 
 			bool allTermsHaveProperty = true;
 			List<double> propValues = new List<double>();
@@ -344,10 +350,16 @@ namespace IRB.Revigo.Core
 		/// at random).
 		/// </summary>
 		/// <param name="rnd"></param>
-		private void BuildDispensableTermList(RandomMT19937 rnd, CancellationToken token)
+		private void BuildDispensableTermList(RandomMT19937 rnd, CancellationToken? token)
 		{
+			if (this.oMatrix == null)
+				return;
+
 			GeneOntology oOntology = this.oParent.Ontology;
-			SpeciesAnnotations oAnnotations = this.oParent.Annotations;
+			SpeciesAnnotations? oAnnotations = this.oParent.Annotations;
+
+			if (oAnnotations == null)
+				return;
 
 			bool keepGreater = true;
 			bool absLogProp = false;
@@ -363,7 +375,7 @@ namespace IRB.Revigo.Core
 				property.Dispensability = 0.0;
 				property.DispensedBy = -1;
 
-				if (token.IsCancellationRequested)
+				if (token != null && token.Value.IsCancellationRequested)
 					return;
 			}
 
@@ -377,7 +389,7 @@ namespace IRB.Revigo.Core
 			{
 				double propX = this.aProperties[i].TransformedValue;
 
-				if (token.IsCancellationRequested)
+				if (token != null && token.Value.IsCancellationRequested)
 					return;
 
 				// we are symmetrical
@@ -420,7 +432,7 @@ namespace IRB.Revigo.Core
 
 				while (aPairs.Count > 0)
 				{
-					if (token.IsCancellationRequested)
+					if (token != null && token.Value.IsCancellationRequested)
 						return;
 
 					int iSelected = (aPairs.Count > 1) ? rnd.Next(aPairs.Count) : 0;
@@ -593,8 +605,11 @@ namespace IRB.Revigo.Core
 			}
 		}
 
-		private bool DoMDS(CancellationToken token)
+		private bool DoMDS(CancellationToken? token)
 		{
+			if (this.oMatrix == null)
+				return false;
+
 			double dProgress;
 
 			double dCutoff = this.oParent.CutOff;
@@ -603,7 +618,7 @@ namespace IRB.Revigo.Core
 
 			for (int i = 0; i < iTermsCount; i++)
 			{
-				if (token.IsCancellationRequested)
+				if (token != null && token.Value.IsCancellationRequested)
 					return false;
 
 				GOTerm term = this.aTerms[i];
@@ -626,7 +641,7 @@ namespace IRB.Revigo.Core
 				{
 					double value = this.oMatrix.GetValue(aMDSTerms[i], aMDSTerms[j]);
 
-					if (token.IsCancellationRequested)
+					if (token != null && token.Value.IsCancellationRequested)
 						return false;
 
 					// no NaN in matrix for MDS otherwise it will break! We can safely assume no similarity between these terms
@@ -660,7 +675,7 @@ namespace IRB.Revigo.Core
 			{
 				double[,] mdsResult = MDS.MDS.StressMinimization(oMatrixArray, iMDSAxes, 0, 5, 10000); // really try to converge, iterate for 10 seconds
 
-				if (token.IsCancellationRequested)
+				if (token != null && token.Value.IsCancellationRequested)
 					return false;
 
 				dProgress = this.dProgressPos + 5.0;
@@ -677,7 +692,7 @@ namespace IRB.Revigo.Core
 
 					for (int j = 0; j < iMDSAxes; j++)
 					{
-						if (token.IsCancellationRequested)
+						if (token != null && token.Value.IsCancellationRequested)
 							return false;
 
 						if (j < iAxes)
@@ -714,7 +729,7 @@ namespace IRB.Revigo.Core
 
 					for (int j = 0; j < iMDSAxes; j++)
 					{
-						if (token.IsCancellationRequested)
+						if (token != null && token.Value.IsCancellationRequested)
 							return false;
 
 						if (j < iAxes)
@@ -739,7 +754,7 @@ namespace IRB.Revigo.Core
 			{
 				double[,] mdsResult = MDS.MDS.StressMinimization(oMatrixArray, iMDSAxes, 0, 5, 10000); // really try to converge, iterate for 10 seconds
 
-				if (token.IsCancellationRequested)
+				if (token != null && token.Value.IsCancellationRequested)
 					return false;
 
 				dProgress = this.dProgressPos + 9.0;
@@ -756,7 +771,7 @@ namespace IRB.Revigo.Core
 
 					for (int j = 0; j < iMDSAxes; j++)
 					{
-						if (token.IsCancellationRequested)
+						if (token != null && token.Value.IsCancellationRequested)
 							return false;
 
 						if (j < iAxes)
@@ -793,7 +808,7 @@ namespace IRB.Revigo.Core
 
 					for (int j = 0; j < iMDSAxes; j++)
 					{
-						if (token.IsCancellationRequested)
+						if (token != null && token.Value.IsCancellationRequested)
 							return false;
 
 						if (j < iAxes)
@@ -817,16 +832,16 @@ namespace IRB.Revigo.Core
 			return bError;
 		}
 
-		private void MakeSimpleThresholdOntolograph(double similarityThreshold, CancellationToken token)
+		private void MakeSimpleThresholdOntolograph(double similarityThreshold, CancellationToken? token)
 		{
 			OntoloGraph result = new OntoloGraph();
 			GeneOntology oOntology = this.oParent.Ontology;
-			SpeciesAnnotations oAnnotations = this.oParent.Annotations;
+			SpeciesAnnotations? oAnnotations = this.oParent.Annotations;
 			BHashSet<GOTerm> outerTermsProcessed = new BHashSet<GOTerm>();
 			BHashSet<int> termIdsWithConnections = new BHashSet<int>();
 			int iTermCount = this.aTerms.Length;
 
-			if (iTermCount == 0)
+			if (oAnnotations == null || iTermCount == 0)
 				this.oOntoloGraph = null; // empty if no input data
 
 			double dProgressOld = this.dProgressPos;
@@ -853,7 +868,7 @@ namespace IRB.Revigo.Core
 					GOTerm innerGoTerm = this.aTerms[j];
 					int innerGoId = innerGoTerm.ID;
 
-					if (token.IsCancellationRequested)
+					if (token != null && token.Value.IsCancellationRequested)
 						return;
 
 					// skip connections to self, and two-way connections
@@ -913,7 +928,7 @@ namespace IRB.Revigo.Core
 
 				for (int j = 0; j < iTermCount; j++)
 				{
-					if (token.IsCancellationRequested)
+					if (token != null && token.Value.IsCancellationRequested)
 						return;
 
 					GOTerm innerGoTerm = this.aTerms[j];
@@ -974,7 +989,7 @@ namespace IRB.Revigo.Core
 				GOTerm curGoTerm = this.aTerms[i];
 				GOTermProperties oProperties = this.aProperties[i];
 
-				if (token.IsCancellationRequested)
+				if (token != null && token.Value.IsCancellationRequested)
 					return;
 
 				if (!oProperties.Pinned)
@@ -986,7 +1001,7 @@ namespace IRB.Revigo.Core
 
 				GraphNode node = new GraphNode();
 				node.ID = curGoTerm.ID;
-				node.properties.Add("description", curGoTerm.Name);
+				node.properties.Add("description", curGoTerm.Name ?? "");
 
 				// string[] props = { "value", "LogSize", "PC_1", "PC_2", "dispensability", "uniqueness" };
 				if (!double.IsNaN(oProperties.Value))

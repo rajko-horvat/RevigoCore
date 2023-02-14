@@ -35,7 +35,7 @@ namespace IRB.Revigo.Databases
 	public class SpeciesAnnotations
 	{
 		private int iTaxonID = -1;
-		private string sSpeciesName = null;
+		private string? sSpeciesName = null;
 
 		// A dictionary, mapping from GO id to size (# of proteins annotated with it).
 		private BDictionary<int, int> oAnnotations = new BDictionary<int, int>();
@@ -78,7 +78,7 @@ namespace IRB.Revigo.Databases
 			}
 		}
 
-		public string SpeciesName
+		public string? SpeciesName
 		{
 			get
 			{

@@ -41,8 +41,8 @@ namespace IRB.Revigo.Databases
 	{
 		// As given in the header of the OBO-XML file.
 		private BDictionary<int, GOTerm> aTerms = new BDictionary<int, GOTerm>();
-        private DateTime dtDate = DateTime.MinValue;
-		private string sLink = null;
+		private DateTime dtDate = DateTime.MinValue;
+		private string? sLink = null;
 
 		public GeneOntology()
 		{ }
@@ -56,14 +56,13 @@ namespace IRB.Revigo.Databases
 		/// <param name="stream"></param>
 		public GeneOntology(string path)
 		{
-			StreamReader linkReader = null;
 			string sLinkPath = string.Format("{0}.{1}link.txt", Path.GetDirectoryName(path), Path.DirectorySeparatorChar);
 			if (File.Exists(sLinkPath))
 			{
 				try
 				{
-					linkReader = new StreamReader(sLinkPath);
-					string sLine = null;
+					StreamReader linkReader = new StreamReader(sLinkPath);
+					string? sLine = null;
 
 					while (string.IsNullOrEmpty(sLine) && !linkReader.EndOfStream)
 					{
@@ -76,7 +75,7 @@ namespace IRB.Revigo.Databases
 				catch { }
 			}
 
-			StreamReader goReader = null;
+			StreamReader goReader;
 			string sGOFileName = Path.GetFileName(path);
 
 			if (Path.GetExtension(sGOFileName).Equals(".gz", StringComparison.CurrentCultureIgnoreCase))
@@ -90,7 +89,7 @@ namespace IRB.Revigo.Databases
 			}
 
 			switch (Path.GetExtension(sGOFileName).ToLower())
-			{ 
+			{
 				case ".obo":
 					ParseObo(goReader);
 					break;
@@ -155,13 +154,13 @@ namespace IRB.Revigo.Databases
 			Regex rxSectionTag = new Regex(@"^\s*\[\s*([\w\-]+)\s*\]\s*$", RegexOptions.Compiled);
 			Regex rxItemTag = new Regex(@"^\s*([\w\-]+)\s*\:\s*(.*?)\s*$", RegexOptions.Compiled);
 			Regex rxValueString = new Regex("^\"((?:[^\"]|\\.)+)\"\\s*(.*?)\\s*$", RegexOptions.Compiled);
-			GOTerm oCurrentTerm = null;
+			GOTerm? oCurrentTerm = null;
 			bool bInTerm = false;
 			bool bInHeader = true;
 
 			while (!reader.EndOfStream)
 			{
-				string sLine = reader.ReadLine();
+				string? sLine = reader.ReadLine();
 
 				if (sLine != null)
 					sLine = sLine.Trim();
@@ -178,8 +177,6 @@ namespace IRB.Revigo.Databases
 					string sItemValue = mResult.Groups[2].Value.Trim();
 
 					// Item Value can have string value and/or parameters and/or comment
-					string sItemParameter = null;
-
 					if (sItemValue.StartsWith("\""))
 					{
 						mResult = rxValueString.Match(sItemValue);
@@ -189,7 +186,7 @@ namespace IRB.Revigo.Databases
 							string[] aParameters = mResult.Groups[2].Value.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
 							if (aParameters.Length > 0 && !aParameters[0].StartsWith("!") && !aParameters[0].StartsWith("["))
 							{
-								sItemParameter = aParameters[0];
+								sItemValue = aParameters[0];
 							}
 						}
 						else
@@ -215,42 +212,48 @@ namespace IRB.Revigo.Databases
 							oCurrentTerm = new GOTerm(this, ParseGOID(sItemValue));
 							break;
 						case "name":
-							if (oCurrentTerm.Name == null)
+							if (oCurrentTerm != null && oCurrentTerm.Name == null)
 							{
 								oCurrentTerm.Name = HttpUtility.HtmlDecode(sItemValue);
 							}
 							break;
 						case "namespace":
-							if (oCurrentTerm.Namespace == GONamespaceEnum.None)
+							if (oCurrentTerm != null && oCurrentTerm.Namespace == GONamespaceEnum.None)
 							{
 								oCurrentTerm.Namespace = (GONamespaceEnum)Enum.Parse(typeof(GONamespaceEnum),
 									sItemValue, true);
 							}
 							break;
 						case "def":
-							if (oCurrentTerm.Description == null)
+							if (oCurrentTerm != null && oCurrentTerm.Description == null)
 							{
 								oCurrentTerm.Description = HttpUtility.HtmlDecode(sItemValue);
 							}
 							break;
 						case "comment":
-							if (oCurrentTerm.Comment == null)
+							if (oCurrentTerm != null && oCurrentTerm.Comment == null)
 							{
 								oCurrentTerm.Comment = HttpUtility.HtmlDecode(sItemValue);
 							}
 							break;
 						case "alt_id":
-							oCurrentTerm.AltIDs.Add(ParseGOID(sItemValue));
+							if (oCurrentTerm != null)
+							{
+								oCurrentTerm.AltIDs.Add(ParseGOID(sItemValue));
+							}
 							break;
 						case "synonym":
 							// EXACT, RELATED, NARROW...
-							oCurrentTerm.AltNames.Add(HttpUtility.HtmlDecode(sItemValue));
+							if (oCurrentTerm != null)
+							{
+								oCurrentTerm.AltNames.Add(HttpUtility.HtmlDecode(sItemValue));
+							}
 							break;
 						case "is_obsolete":
-							if (sItemValue.Equals("true") && !oCurrentTerm.IsObsolete)
+							if (oCurrentTerm != null && sItemValue.Equals("true") && !oCurrentTerm.IsObsolete)
 							{
 								oCurrentTerm.IsObsolete = true;
-								if (oCurrentTerm.Name.StartsWith("obsolete "))
+								if (oCurrentTerm.Name != null && oCurrentTerm.Name.StartsWith("obsolete "))
 								{
 									oCurrentTerm.Name = "(obsolete) " + oCurrentTerm.Name.Substring(9);
 								}
@@ -261,43 +264,52 @@ namespace IRB.Revigo.Databases
 							}
 							break;
 						case "consider":
-							if (sItemValue.StartsWith("go:", StringComparison.CurrentCultureIgnoreCase))
+							if (oCurrentTerm != null && sItemValue.StartsWith("go:", StringComparison.CurrentCultureIgnoreCase))
 							{
 								oCurrentTerm.GOConsiderIDs.Add(ParseGOID(sItemValue));
 							}
 							break;
 						case "replaced_by":
-							oCurrentTerm.GOReplacementIDs.Add(ParseGOID(sItemValue));
+							if (oCurrentTerm != null)
+							{
+								oCurrentTerm.GOReplacementIDs.Add(ParseGOID(sItemValue));
+							}
 							break;
 						case "is_a":
 						case "to":
-							oCurrentTerm.GOParentIDs.Add(ParseGOID(sItemValue));
+							if (oCurrentTerm != null)
+							{
+								oCurrentTerm.GOParentIDs.Add(ParseGOID(sItemValue));
+							}
 							break;
 						case "relationship":
-							// we currently care only for part_of relation
-							asTemp = sItemValue.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-							if (asTemp.Length < 2)
+							if (oCurrentTerm != null)
 							{
-								throw new Exception("Invalid relationship");
-							}
-							switch (asTemp[0].ToLower())
-							{
-								case "part_of":
-									oCurrentTerm.GOPartOfIDs.Add(ParseGOID(asTemp[1]));
-									break;
-								case "has_part":
-									oCurrentTerm.GOHasPartIDs.Add(ParseGOID(asTemp[1]));
-									break;
-								case "regulates":
-								case "negatively_regulates":
-								case "positively_regulates":
-								case "occurs_in":
-								case "ends_during":
-								case "happens_during":
-									break;
-								default:
-									//throw new Exception(string.Format("Unknown relationship operator: {0}", asTemp[0]));
-									break;
+								// we currently care only for part_of relation
+								asTemp = sItemValue.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+								if (asTemp.Length < 2)
+								{
+									throw new Exception("Invalid relationship");
+								}
+								switch (asTemp[0].ToLower())
+								{
+									case "part_of":
+										oCurrentTerm.GOPartOfIDs.Add(ParseGOID(asTemp[1]));
+										break;
+									case "has_part":
+										oCurrentTerm.GOHasPartIDs.Add(ParseGOID(asTemp[1]));
+										break;
+									case "regulates":
+									case "negatively_regulates":
+									case "positively_regulates":
+									case "occurs_in":
+									case "ends_during":
+									case "happens_during":
+										break;
+									default:
+										//throw new Exception(string.Format("Unknown relationship operator: {0}", asTemp[0]));
+										break;
+								}
 							}
 							break;
 						case "subset":
@@ -367,13 +379,13 @@ namespace IRB.Revigo.Databases
 			Regex rxClosedHTMLTag = new Regex(@"^\s*\<\s*/([\w\-]+)\s*\>\s*$", RegexOptions.Compiled);
 			Regex rxHTMLTag = new Regex(@"^\s*\<\s*([\w\-]+)(?:(?:\s*\>)|(?:\s+[^\>]+\>))\s*([^\<]*)\s*<\s*/([\w\-]+)\s*\>\s*$", RegexOptions.Compiled);
 			Stack<string> oOpenTags = new Stack<string>();
-			GOTerm oCurrentTerm = null;
+			GOTerm? oCurrentTerm = null;
 			bool bInTerm = false;
 			bool bInHeader = false;
 
 			while (!reader.EndOfStream)
 			{
-				string line = reader.ReadLine();
+				string? line = reader.ReadLine();
 
 				if (!string.IsNullOrEmpty(line))
 				{
@@ -397,35 +409,41 @@ namespace IRB.Revigo.Databases
 									oCurrentTerm = new GOTerm(this, ParseGOID(sTagValue));
 									break;
 								case "name":
-									if (oCurrentTerm.Name == null)
+									if (oCurrentTerm != null && oCurrentTerm.Name == null)
 									{
 										oCurrentTerm.Name = HttpUtility.HtmlDecode(sTagValue);
 									}
 									break;
 								case "namespace":
-									if (oCurrentTerm.Namespace == GONamespaceEnum.None)
+									if (oCurrentTerm != null && oCurrentTerm.Namespace == GONamespaceEnum.None)
 									{
 										oCurrentTerm.Namespace = (GONamespaceEnum)Enum.Parse(typeof(GONamespaceEnum),
 											sTagValue, true);
 									}
 									break;
 								case "defstr":
-									if (oCurrentTerm.Description == null)
+									if (oCurrentTerm != null && oCurrentTerm.Description == null)
 									{
 										oCurrentTerm.Description = HttpUtility.HtmlDecode(sTagValue);
 									}
 									break;
 								case "alt_id":
-									oCurrentTerm.AltIDs.Add(ParseGOID(sTagValue));
+									if (oCurrentTerm != null)
+									{
+										oCurrentTerm.AltIDs.Add(ParseGOID(sTagValue));
+									}
 									break;
 								case "synonym_text":
-									oCurrentTerm.AltNames.Add(HttpUtility.HtmlDecode(sTagValue));
+									if (oCurrentTerm != null)
+									{
+										oCurrentTerm.AltNames.Add(HttpUtility.HtmlDecode(sTagValue));
+									}
 									break;
 								case "is_obsolete":
-									if (sTagValue.Equals("1") && !oCurrentTerm.IsObsolete)
+									if (sTagValue.Equals("1") && oCurrentTerm != null && !oCurrentTerm.IsObsolete)
 									{
 										oCurrentTerm.IsObsolete = true;
-										if (oCurrentTerm.Name.StartsWith("obsolete "))
+										if (oCurrentTerm.Name != null && oCurrentTerm.Name.StartsWith("obsolete "))
 										{
 											oCurrentTerm.Name = "(obsolete) " + oCurrentTerm.Name.Substring(9);
 										}
@@ -436,11 +454,17 @@ namespace IRB.Revigo.Databases
 									}
 									break;
 								case "replaced_by":
-									oCurrentTerm.GOReplacementIDs.Add(ParseGOID(sTagValue));
+									if (oCurrentTerm != null)
+									{
+										oCurrentTerm.GOReplacementIDs.Add(ParseGOID(sTagValue));
+									}
 									break;
 								case "is_a":
 								case "to":
-									oCurrentTerm.GOParentIDs.Add(ParseGOID(sTagValue));
+									if (oCurrentTerm != null)
+									{
+										oCurrentTerm.GOParentIDs.Add(ParseGOID(sTagValue));
+									}
 									break;
 							}
 						}
@@ -534,7 +558,10 @@ namespace IRB.Revigo.Databases
 
 				while (!file.EndOfStream)
 				{
-					string line = file.ReadLine();
+					string? line = file.ReadLine();
+
+					if (line == null)
+						continue;
 
 					if (line.StartsWith("DE"))
 					{
@@ -623,7 +650,6 @@ namespace IRB.Revigo.Databases
 						}
 
 						curText = new StringBuilder();
-						continue;
 					}
 				}
 
@@ -648,7 +674,7 @@ namespace IRB.Revigo.Databases
 		/// <summary>
 		/// Gets or sets the link from which the Gene Ontology database has been downloaded.
 		/// </summary>
-		public string Link
+		public string? Link
 		{
 			get
 			{
@@ -683,7 +709,7 @@ namespace IRB.Revigo.Databases
 			get { return this.aTerms; }
 		}
 
-        public static string NamespaceToFriendlyString(GONamespaceEnum name)
+		public static string NamespaceToFriendlyString(GONamespaceEnum name)
 		{
 			string friendlyName = name.ToString().Replace('_', ' ').Trim().ToLower();
 			int iPos = 0;
@@ -740,8 +766,12 @@ namespace IRB.Revigo.Databases
 		public static GeneOntology Deserialize(StreamReader reader)
 		{
 			XmlSerializer ser = new XmlSerializer(typeof(GeneOntology));
-			GeneOntology newObj = (GeneOntology)ser.Deserialize(reader);
-			for (int i = 0; i < newObj.Terms.Count;i++)
+			object? obj = ser.Deserialize(reader);
+			if (obj == null)
+				throw new Exception("Can't deserialize GeneOntology object");
+
+			GeneOntology newObj = (GeneOntology)obj;
+			for (int i = 0; i < newObj.Terms.Count; i++)
 			{
 				GOTerm term = newObj.Terms[i].Value;
 				term.ReferencesInitialized = true;

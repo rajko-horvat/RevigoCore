@@ -29,7 +29,9 @@ namespace IRB.Collections.Generic
 	/// 	DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
 	/// 	ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.	/// </summary>
 	[Serializable]
-	public struct BKeyValuePair<TKey, TValue>
+	public struct BKeyValuePair<TKey, TValue> 
+		where TKey: notnull
+		where TValue : notnull
 	{
 		private TKey key;
 		private TValue value;

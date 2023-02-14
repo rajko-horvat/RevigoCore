@@ -32,10 +32,10 @@ namespace IRB.Revigo.Core
 	/// </summary>
 	public class TermSimilarityMatrix
 	{
-		private TermListVisualizer oParent = null;
+		private TermListVisualizer oParent;
 
 		//private double[,] aMatrix = null;
-		private double[] aMatrix1 = null;
+		private double[] aMatrix;
 
 		/// <summary>
 		/// Constructs a distance matrix of all the GO terms present in termList.
@@ -57,10 +57,10 @@ namespace IRB.Revigo.Core
 		/// Constructs a distance matrix of all the GO terms present in termList.
 		/// </summary>
 		/// <param name="parent"></param>
-		public TermSimilarityMatrix(TermListVisualizer parent, CancellationToken? token, ProgressEventHandler progress)
+		public TermSimilarityMatrix(TermListVisualizer parent, CancellationToken? token, ProgressEventHandler? progress)
 		{
 			this.oParent = parent;
-			ConstructMatrix(token, progress);
+			this.aMatrix = ConstructMatrix(token, progress);
 		}
 
 		public TermListVisualizer Parent
@@ -93,20 +93,23 @@ namespace IRB.Revigo.Core
 				iColumn = row - 1;
 			}
 
-			return this.aMatrix1[(iColumn * (iColumn + 1)) / 2 + iRow];
+			return this.aMatrix[(iColumn * (iColumn + 1)) / 2 + iRow];
 		}
 
-		private void ConstructMatrix(CancellationToken? token, ProgressEventHandler progress)
+		private double[] ConstructMatrix(CancellationToken? token, ProgressEventHandler? progress)
 		{
 			SemanticSimilarityEnum similarityType = this.oParent.Parent.SemanticSimilarity;
 			GeneOntology myGO = this.oParent.Parent.Ontology;
-			SpeciesAnnotations oAnnotations = this.oParent.Parent.Annotations;
+			SpeciesAnnotations? oAnnotations = this.oParent.Parent.Annotations;
 			GOTerm[] terms = this.oParent.Terms;
 			int iTermCount = terms.Length;
 			double dProgressStep = 100.0 / (double)iTermCount;
 			double dOldProgress = 0.0;
 			//this.aMatrix = new double[iTermCount, iTermCount];
-			this.aMatrix1 = new double[((iTermCount - 1) * iTermCount) / 2];
+			double[] aMatrix = new double[((iTermCount - 1) * iTermCount) / 2];
+
+			if (oAnnotations == null)
+				return new double[0];
 
 			// reduces memory consumption by half
 			for (int i = 1; i < iTermCount; i++)
@@ -116,7 +119,7 @@ namespace IRB.Revigo.Core
 				for (int j = 0; j < i; j++)
 				{
 					GOTerm go2 = terms[j];
-					this.aMatrix1[((i - 1) * i) / 2 + j] = CalculateSemanticSimilarity(similarityType, go1, go2, oAnnotations, myGO);
+					aMatrix[((i - 1) * i) / 2 + j] = CalculateSemanticSimilarity(similarityType, go1, go2, oAnnotations, myGO);
 				}
 
 				double dProgress = (double)i * dProgressStep;
@@ -167,6 +170,8 @@ namespace IRB.Revigo.Core
 					}
 				}
 			}*/
+
+			return aMatrix;
 		}
 
 		/// <summary>

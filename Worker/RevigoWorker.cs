@@ -43,14 +43,14 @@ namespace IRB.Revigo.Worker
 		private TimeSpan tsDefaultTimeout = new TimeSpan(0, 20, 0);
 		private const int MaxNonEliminatedTerms = 300;
 
-		private GeneOntology oOntology = null;
+		private GeneOntology oOntology;
 		private RequestSourceEnum eRequestSource = RequestSourceEnum.WebPage;
 		private double dCutOff = 0.7;
 		private ValueTypeEnum eValueType = ValueTypeEnum.PValue;
-		private SpeciesAnnotations oAnnotations = null;
+		private SpeciesAnnotations? oAnnotations;
 		private SemanticSimilarityEnum eSemanticSimilarity = SemanticSimilarityEnum.SIMREL;
 		private bool bRemoveObsolete = true;
-		private string sData = null;
+		private string sData;
 
 		private double dProgress = 0.0;
 		private double dProgressPos = 0.0;
@@ -60,8 +60,8 @@ namespace IRB.Revigo.Worker
 		private bool bRunning = false;
 		private bool bFinished = false;
 		private bool bWorkerTimeout = false;
-		private System.Timers.Timer oWorkerTimer = null;
-		private Thread oWorkerThread = null;
+		private System.Timers.Timer? oWorkerTimer = null;
+		private Thread? oWorkerThread = null;
 		private object oWorkerLock = new object();
 
 		// for debugging purposes
@@ -91,11 +91,11 @@ namespace IRB.Revigo.Worker
 		private List<GOTerm> oBPTerms = new List<GOTerm>();
 		private List<GOTerm> oMFTerms = new List<GOTerm>();
 		private List<GOTerm> oCCTerms = new List<GOTerm>();
-		private BDictionary<string, double> oEnrichments = null;
-		private BDictionary<string, double> oCorrelations = null;
-		private TermListVisualizer oBPVisualizer = null;
-		private TermListVisualizer oMFVisualizer = null;
-		private TermListVisualizer oCCVisualizer = null;
+		private BDictionary<string, double>? oEnrichments = null;
+		private BDictionary<string, double>? oCorrelations = null;
+		private TermListVisualizer? oBPVisualizer = null;
+		private TermListVisualizer? oMFVisualizer = null;
+		private TermListVisualizer? oCCVisualizer = null;
 
 		private DateTime dtCreateDateTime = DateTime.Now;
 		private TimeSpan tsExecutingTime = new TimeSpan(0);
@@ -104,14 +104,14 @@ namespace IRB.Revigo.Worker
 
 		private CancellationTokenSource oToken;
 
-		public RevigoWorker(GeneOntology ontology, SpeciesAnnotations annotations, TimeSpan timeout, RequestSourceEnum requestSource,
+		public RevigoWorker(GeneOntology ontology, SpeciesAnnotations? annotations, TimeSpan timeout, RequestSourceEnum requestSource,
 			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityEnum similarity, bool removeObsolete) :
 			this(-1, ontology, annotations, timeout, requestSource,
 			data, cutOff, valueType, similarity, removeObsolete)
 		{
 		}
 
-		public RevigoWorker(int jobID, GeneOntology ontology, SpeciesAnnotations annotations, TimeSpan timeout, RequestSourceEnum requestSource,
+		public RevigoWorker(int jobID, GeneOntology ontology, SpeciesAnnotations? annotations, TimeSpan timeout, RequestSourceEnum requestSource,
 			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityEnum similarity, bool removeObsolete)
 		{
 			this.iJobID = jobID;
@@ -124,6 +124,7 @@ namespace IRB.Revigo.Worker
 			this.eValueType = valueType;
 			this.eSemanticSimilarity = similarity;
 			this.bRemoveObsolete = removeObsolete;
+			this.oToken = new CancellationTokenSource();
 
 			ValidateCutOff();
 		}
@@ -143,7 +144,7 @@ namespace IRB.Revigo.Worker
 			}
 		}
 
-		public SpeciesAnnotations Annotations
+		public SpeciesAnnotations? Annotations
 		{
 			get
 			{
@@ -394,7 +395,7 @@ namespace IRB.Revigo.Worker
 			}
 		}
 
-		public TermListVisualizer BPVisualizer
+		public TermListVisualizer? BPVisualizer
 		{
 			get
 			{
@@ -410,7 +411,7 @@ namespace IRB.Revigo.Worker
 			}
 		}
 
-		public TermListVisualizer MFVisualizer
+		public TermListVisualizer? MFVisualizer
 		{
 			get
 			{
@@ -426,7 +427,7 @@ namespace IRB.Revigo.Worker
 			}
 		}
 
-		public TermListVisualizer CCVisualizer
+		public TermListVisualizer? CCVisualizer
 		{
 			get
 			{
@@ -438,12 +439,12 @@ namespace IRB.Revigo.Worker
 		{
 			get
 			{
-				return (this.oEnrichments != null && this.Enrichments.Count > 0) || 
-					(this.oCorrelations != null && this.Correlations.Count > 0);
+				return (this.oEnrichments != null && this.oEnrichments.Count > 0) || 
+					(this.oCorrelations != null && this.oCorrelations.Count > 0);
 			}
 		}
 
-		public BDictionary<string, double> Enrichments
+		public BDictionary<string, double>? Enrichments
 		{
 			get
 			{
@@ -451,7 +452,7 @@ namespace IRB.Revigo.Worker
 			}
 		}
 
-		public BDictionary<string, double> Correlations
+		public BDictionary<string, double>? Correlations
 		{
 			get
 			{
@@ -570,7 +571,7 @@ namespace IRB.Revigo.Worker
 			}
 		}
 
-		void oWorkerTimer_Elapsed(object sender, ElapsedEventArgs e)
+		void oWorkerTimer_Elapsed(object? sender, ElapsedEventArgs e)
 		{
 			if (this.bRunning && !oToken.IsCancellationRequested)
 			{
@@ -585,10 +586,9 @@ namespace IRB.Revigo.Worker
 
 		private GONamespaceEnum eCurrentNamespace = GONamespaceEnum.None;
 
-		private void StartRevigo(object token)
+		private void StartRevigo(object? token)
 		{
-			CancellationToken oToken = (CancellationToken)token;
-			StreamWriter oLogWriter = null;
+			CancellationToken? oToken = (token == null) ? null : (CancellationToken)token;
 
 			this.bRunning = true;
 			this.oWorkerTimer = new System.Timers.Timer(tsDefaultTimeout.TotalMilliseconds);
@@ -598,22 +598,24 @@ namespace IRB.Revigo.Worker
 			DateTime dtStartTime = DateTime.Now;
 			this.tsExecutingTime = new TimeSpan(0);
 
-			// is Gene ontology object initialized?
-			if (this.oOntology == null || this.oOntology.Terms.Count == 0)
-			{
-				this.aErrors.Add("The Gene Ontology is not initialized.");
-				this.aDevErrors.Add("The Gene Ontology is not initialized.");
-
-				this.bFinished = true;
-				this.bRunning = false;
-				this.oWorkerTimer.Stop();
-				this.oWorkerTimer.Dispose();
-				this.oWorkerTimer = null;
-				return;
-			}
-
 			try
 			{
+				// is Gene ontology object initialized?
+				if (this.oOntology == null || this.oOntology.Terms.Count == 0)
+				{
+					this.aErrors.Add("The Gene Ontology is not initialized.");
+					this.aDevErrors.Add("The Gene Ontology is not initialized.");
+
+					return;
+				}
+
+				if (this.oAnnotations == null)
+				{
+					this.aErrors.Add("Species annotations have not been selected.");
+
+					return;
+				}
+
 				if (!this.bDataParsed)
 				{
 					this.oAllTerms.Clear();
@@ -633,7 +635,7 @@ namespace IRB.Revigo.Worker
 					this.dProgressSlice = 5.0;
 
 					StringReader oDataReader = new StringReader(this.sData);
-					string sLine;
+					string? sLine;
 					int iLineCount = 0;
 					int iLinePos = 0;
 
@@ -647,7 +649,7 @@ namespace IRB.Revigo.Worker
 
 					while ((sLine = oDataReader.ReadLine()) != null)
 					{
-						if (oToken.IsCancellationRequested)
+						if (oToken != null && oToken.Value.IsCancellationRequested)
 						{
 							this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
 							return;
@@ -675,7 +677,7 @@ namespace IRB.Revigo.Worker
 							continue;
 						}
 
-						GOTerm oGOTerm = null;
+						GOTerm? oGOTerm = null;
 						if (this.oOntology.Terms.ContainsKey(iGOID))
 						{
 							oGOTerm = this.oOntology.Terms.GetValueByKey(iGOID);
@@ -932,7 +934,7 @@ namespace IRB.Revigo.Worker
 					this.oBPVisualizer = new TermListVisualizer(this, GONamespaceEnum.BIOLOGICAL_PROCESS, this.oBPTerms.ToArray(),
 						this.oAllProperties, oToken, Visualizer_OnProgress);
 
-					if (oToken.IsCancellationRequested)
+					if (oToken != null && oToken.Value.IsCancellationRequested)
 					{
 						this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
 						return;
@@ -978,7 +980,7 @@ namespace IRB.Revigo.Worker
 					this.oCCVisualizer = new TermListVisualizer(this, GONamespaceEnum.CELLULAR_COMPONENT, this.oCCTerms.ToArray(),
 						this.oAllProperties, oToken, Visualizer_OnProgress);
 
-					if (oToken.IsCancellationRequested)
+					if (oToken != null && oToken.Value.IsCancellationRequested)
 					{
 						this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
 						return;
@@ -1024,7 +1026,7 @@ namespace IRB.Revigo.Worker
 					this.oMFVisualizer = new TermListVisualizer(this, GONamespaceEnum.MOLECULAR_FUNCTION, this.oMFTerms.ToArray(),
 						this.oAllProperties, oToken, Visualizer_OnProgress);
 
-					if (oToken.IsCancellationRequested)
+					if (oToken != null && oToken.Value.IsCancellationRequested)
 					{
 						this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
 						return;
@@ -1072,7 +1074,7 @@ namespace IRB.Revigo.Worker
 					GOTermWordCorpus corpus = new GOTermWordCorpus(this.oAllTerms, this.oOntology);
 					this.oEnrichments = corpus.calculateWordEnrichment(this.oAnnotations.WordCorpus, 70, 0);
 
-					if (oToken.IsCancellationRequested)
+					if (oToken != null && oToken.Value.IsCancellationRequested)
 					{
 						this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
 						return;
@@ -1084,7 +1086,7 @@ namespace IRB.Revigo.Worker
 						this.oCorrelations = correlCorpus.getMostFrequentWords(70);
 					}
 
-					if (oToken.IsCancellationRequested)
+					if (oToken != null && oToken.Value.IsCancellationRequested)
 					{
 						this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
 						return;
@@ -1102,8 +1104,10 @@ namespace IRB.Revigo.Worker
 					this.aWarnings.Add("You have provided more than one number alongside each GO term. Note that only the first value following the GO term will be used to select and cluster GO terms, although others values will be available in the scatterplot and the table view.");
 				}
 
-				if (this.oBPVisualizer.Terms.Length == 0 && this.oCCVisualizer.Terms.Length == 0 &&
-					this.oMFVisualizer.Terms.Length == 0 && this.oAllTerms.Count == 0)
+				if ((this.oBPVisualizer == null || this.oBPVisualizer.Terms.Length == 0) &&
+					(this.oCCVisualizer == null || this.oCCVisualizer.Terms.Length == 0) &&
+					(this.oMFVisualizer == null || this.oMFVisualizer.Terms.Length == 0) &&
+					this.oAllTerms.Count == 0)
 				{
 					this.aErrors.Add("Your query has produced no results in any namespace, please return to the input page and correct the error.");
 				}
@@ -1114,7 +1118,7 @@ namespace IRB.Revigo.Worker
 			catch (Exception ex)
 			{
 				this.aErrors.Add("Unknown error has occured.");
-				if (!oToken.IsCancellationRequested)
+				if (oToken != null && !oToken.Value.IsCancellationRequested)
 				{
 					this.aDevErrors.Add(string.Format("Exception: {0}", ex.Message));
 					this.aDevErrors.Add(string.Format("Stack trace: {0}", ex.StackTrace));
@@ -1122,15 +1126,6 @@ namespace IRB.Revigo.Worker
 			}
 			finally
 			{
-				if (oLogWriter != null)
-				{
-					try
-					{
-						oLogWriter.Close();
-					}
-					catch { }
-				}
-
 				this.tsExecutingTime = DateTime.Now - dtStartTime;
 
 				if (!this.bPinningJob && this.OnFinish != null)

@@ -32,13 +32,13 @@ namespace IRB.Revigo.Worker
 	public class ProgressEventArgs : EventArgs
 	{
 		private double dProgress;
-		private string sDescription = null;
+		private string? sDescription = null;
 
 		public ProgressEventArgs(double progress)
 			: this(progress, null)
 		{ }
 
-		public ProgressEventArgs(double progress, string description)
+		public ProgressEventArgs(double progress, string? description)
 		{
 			this.dProgress = progress;
 			this.sDescription = description;
@@ -52,7 +52,7 @@ namespace IRB.Revigo.Worker
 			}
 		}
 
-		public string Description
+		public string? Description
 		{
 			get
 			{

@@ -44,16 +44,16 @@ namespace IRB.Revigo.Databases
 	public class GOTerm : IComparable<GOTerm>, IComparer<GOTerm>, IEqualityComparer<GOTerm>
 	{
 		// The GeneOntology object this term belongs to.
-		private GeneOntology oOntology = null;
+		private GeneOntology? oOntology = null;
 		private int iID = -1; // The main unique ID for the node.
 		private BHashSet<int> aAltIDs = new BHashSet<int>(); // List of alternate IDs for the node.
 		private GONamespaceEnum eNamespace; // The namespace this term belongs to.
-		private string sName = null; // The main name of the node.
+		private string? sName = null; // The main name of the node.
 		private List<string> aAltNames = new List<string>(); // List of alternate names for the node
-		private string sDescription = null;
-		private string sComment = null;
+		private string? sDescription = null;
+		private string? sComment = null;
 		private bool bObsolete = false;
-		
+
 		private BHashSet<int> aGOParentIDs = new BHashSet<int>(); // A list of all parent IDs of the node in the ontology
 		private BHashSet<int> aGOPartOfIDs = new BHashSet<int>(); // A list of all conditional parent IDs of the node in the ontology
 		private BHashSet<int> aGOHasPartIDs = new BHashSet<int>(); // A list of all conditional children IDs of the node in the ontology
@@ -93,7 +93,7 @@ namespace IRB.Revigo.Databases
 			// A is a child of B, and B is a parent of A
 			for (int j = 0; j < this.aGOParentIDs.Count; j++)
 			{
-				if (this.oOntology.Terms.ContainsKey(this.aGOParentIDs[j]))
+				if (this.oOntology != null && this.oOntology.Terms.ContainsKey(this.aGOParentIDs[j]))
 				{
 					GOTerm parent = this.oOntology.Terms.GetValueByKey(this.aGOParentIDs[j]);
 
@@ -105,14 +105,14 @@ namespace IRB.Revigo.Databases
 			// A is a child of B, but B is not always a parent of A
 			for (int j = 0; j < this.aGOPartOfIDs.Count; j++)
 			{
-				if (this.oOntology.Terms.ContainsKey(this.aGOPartOfIDs[j]))
+				if (this.oOntology != null && this.oOntology.Terms.ContainsKey(this.aGOPartOfIDs[j]))
 					this.aParentIDs.Add(this.aGOPartOfIDs[j]);
 			}
 
 			// A is a parent of B, but B is not always a child of A
 			for (int j = 0; j < this.aGOHasPartIDs.Count; j++)
 			{
-				if (this.oOntology.Terms.ContainsKey(this.aGOHasPartIDs[j]))
+				if (this.oOntology != null && this.oOntology.Terms.ContainsKey(this.aGOHasPartIDs[j]))
 					this.aChildrenIDs.Add(this.aGOHasPartIDs[j]);
 			}
 
@@ -126,34 +126,39 @@ namespace IRB.Revigo.Databases
 			{
 				BHashSet<int> allParentIDs = new BHashSet<int>();
 
-				foreach (int parentID in this.aParentIDs)
+				if (this.oOntology != null)
 				{
-					allParentIDs.Add(parentID);
-					GOTerm parent = this.oOntology.Terms.GetValueByKey(parentID);
-					if (!parent.ReferencesInitialized)
-						parent.InitializeReferences();
-
-					BHashSet<int> parentIDs = parent.AllParentIDs;
-					for (int i = 0; i < parentIDs.Count; i++)
+					foreach (int parentID in this.aParentIDs)
 					{
-						allParentIDs.Add(parentIDs[i]);
+						allParentIDs.Add(parentID);
+						GOTerm parent = this.oOntology.Terms.GetValueByKey(parentID);
+						if (!parent.ReferencesInitialized)
+							parent.InitializeReferences();
+
+						BHashSet<int> parentIDs = parent.AllParentIDs;
+						for (int i = 0; i < parentIDs.Count; i++)
+						{
+							allParentIDs.Add(parentIDs[i]);
+						}
 					}
 				}
-
 				this.aAllParentIDs = allParentIDs;
 				bReferencesInitialized = true;
 
 				GOTerm curNode = this;
-				while (!curNode.IsRootNode)
+				if (this.oOntology != null)
 				{
-					curNode = this.oOntology.Terms.GetValueByKey(curNode.AllParentIDs[0]);
+					while (!curNode.IsRootNode)
+					{
+						curNode = this.oOntology.Terms.GetValueByKey(curNode.AllParentIDs[0]);
+					}
 				}
 				this.iRootNodeID = curNode.ID;
 			}
 		}
 
 		[XmlIgnore]
-		internal bool ReferencesInitialized 
+		internal bool ReferencesInitialized
 		{
 			get { return bReferencesInitialized; }
 			set { this.bReferencesInitialized = value; }
@@ -224,7 +229,7 @@ namespace IRB.Revigo.Databases
 		}
 
 		[XmlIgnore]
-		public GeneOntology Ontology
+		public GeneOntology? Ontology
 		{
 			get
 			{
@@ -233,7 +238,7 @@ namespace IRB.Revigo.Databases
 		}
 
 		[XmlIgnore]
-		internal GeneOntology OntologyInternal
+		internal GeneOntology? OntologyInternal
 		{
 			get { return this.oOntology; }
 			set { this.oOntology = value; }
@@ -264,13 +269,13 @@ namespace IRB.Revigo.Databases
 			set { this.eNamespace = value; }
 		}
 
-		public string Description
+		public string? Description
 		{
 			get { return this.sDescription; }
 			set { this.sDescription = value; }
 		}
 
-		public string Comment
+		public string? Comment
 		{
 			get { return this.sComment; }
 			set { this.sComment = value; }
@@ -288,7 +293,7 @@ namespace IRB.Revigo.Databases
 		/// Gets or sets the name of the GOTerm.
 		/// </summary>
 		/// <param name="name"></param>
-		public string Name
+		public string? Name
 		{
 			get { return this.sName; }
 			set { this.sName = value; }
@@ -434,15 +439,19 @@ namespace IRB.Revigo.Databases
 		{
 			BHashSet<int> siblings = new BHashSet<int>();
 
-			foreach (int parentID in this.aParentIDs)
+			if (this.oOntology != null)
 			{
-				GOTerm parent = this.oOntology.Terms.GetValueByKey(parentID);
-
-				foreach (int child in parent.ChildrenIDs)
+				foreach (int parentID in this.aParentIDs)
 				{
-					siblings.Add(child);
+					GOTerm parent = this.oOntology.Terms.GetValueByKey(parentID);
+
+					foreach (int child in parent.ChildrenIDs)
+					{
+						siblings.Add(child);
+					}
 				}
 			}
+
 			siblings.Remove(this.iID);
 
 			return siblings;
@@ -453,7 +462,7 @@ namespace IRB.Revigo.Databases
 		/// </summary>
 		/// <param name="obj">A GOTerm to compare to</param>
 		/// <returns>True if two nodes have the same unique ID</returns>
-		public override bool Equals(object obj)
+		public override bool Equals(object? obj)
 		{
 			if (obj == null || (!obj.GetType().Equals(typeof(GOTerm)) && !obj.GetType().IsSubclassOf(typeof(GOTerm))))
 			{
@@ -484,17 +493,24 @@ namespace IRB.Revigo.Databases
 
 		#region IComparable<GOTerm> Members
 
-		public int CompareTo(GOTerm other)
+		public int CompareTo(GOTerm? other)
 		{
-			return this.iID.CompareTo(other.iID);
+			return (other == null) ? 1 : this.iID.CompareTo(other.iID);
 		}
 
 		#endregion
 
 		#region IComparer<GOTerm> Members
 
-		public int Compare(GOTerm x, GOTerm y)
+		public int Compare(GOTerm? x, GOTerm? y)
 		{
+			if (x == null && y == null)
+				return 0;
+			if (x == null)
+				return -1;
+			if (y == null)
+				return 1;
+
 			return x.ID.CompareTo(y.ID);
 		}
 
@@ -502,8 +518,13 @@ namespace IRB.Revigo.Databases
 
 		#region IEqualityComparer<GOTerm> Members
 
-		public bool Equals(GOTerm x, GOTerm y)
+		public bool Equals(GOTerm? x, GOTerm? y)
 		{
+			if (x == null && y == null)
+				return true;
+			if (x == null || y == null)
+				return false;
+
 			return x.ID == y.ID;
 		}
 

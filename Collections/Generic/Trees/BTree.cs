@@ -107,7 +107,7 @@ namespace IRB.Collections.Generic.Trees
 	/// </summary>
 	public class BTree : IDisposable
 	{
-		BTreeNode oRootNode = null; // Pointer to root node
+		BTreeNode oRootNode; // Pointer to root node
 		int iMaxNodeSize;  // Minimum degree
 
 		public BTree()
@@ -128,14 +128,13 @@ namespace IRB.Collections.Generic.Trees
 		public void Dispose()
 		{
 			this.oRootNode.Dispose();
-			this.oRootNode = null;
 		}
 
 		#endregion
 
 		public void Clear()
 		{
-			this.oRootNode.Dispose();
+			this.oRootNode.Clear();
 		}
 
 		/// <summary>
@@ -151,7 +150,7 @@ namespace IRB.Collections.Generic.Trees
 		/// </summary>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public BTreeNode Search(int key)
+		public BTreeNode? Search(int key)
 		{
 			// Call the search function for root
 			return this.oRootNode.Search(key);
@@ -162,7 +161,7 @@ namespace IRB.Collections.Generic.Trees
 		/// </summary>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public BKeyIndexPair Find(int key)
+		public BKeyIndexPair? Find(int key)
 		{
 			// Call the search function for root
 			return this.oRootNode.Find(key);
@@ -184,7 +183,7 @@ namespace IRB.Collections.Generic.Trees
 		/// <param name="key"></param>
 		public void Delete(int key)
 		{
-			BTreeNode node = this.oRootNode.Search(key);
+			BTreeNode? node = this.oRootNode.Search(key);
 			// if key not found, no need to remove
 			if (node != null)
 			{

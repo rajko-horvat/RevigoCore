@@ -118,7 +118,7 @@ namespace IRB.Revigo.Core
 			// And now add children of children also
 			for (int i = 0; i < aChildren.Count; i++)
 			{
-				iChildCount += AddChildrenRecursive(resultList, parentIndex + iChildCount, aChildren[i].ID, 
+				iChildCount += AddChildrenRecursive(resultList, parentIndex + iChildCount, aChildren[i].ID,
 					representativeID, termBag, termProperties);
 			}
 
@@ -134,11 +134,19 @@ namespace IRB.Revigo.Core
 				this.properties = properties;
 			}
 
-			public int Compare(GOTerm o1, GOTerm o2)
+			public int Compare(GOTerm? o1, GOTerm? o2)
 			{
 				// -1 - o1 <  o2
 				// 0  - o1 == o2
 				// 1  - o1 >  o2
+
+				// handle nulls
+				if (o1 == null && o2 == null)
+					return 0;
+				if (o1 == null)
+					return -1;
+				if (o2 == null)
+					return 1;
 
 				// they are equal if ID is the same
 				if (o1.ID == o2.ID)
@@ -191,11 +199,19 @@ namespace IRB.Revigo.Core
 				this.properties = properties;
 			}
 
-			public int Compare(GOTerm o1, GOTerm o2)
+			public int Compare(GOTerm? o1, GOTerm? o2)
 			{
 				// -1 - o1 <  o2
 				// 0  - o1 == o2
 				// 1  - o1 >  o2
+
+				// handle nulls
+				if (o1 == null && o2 == null)
+					return 0;
+				if (o1 == null)
+					return -1;
+				if (o2 == null)
+					return 1;
 
 				double o1_d = properties.GetValueByKey(o1.ID).Dispensability;
 				double o2_d = properties.GetValueByKey(o2.ID).Dispensability;
@@ -225,11 +241,19 @@ namespace IRB.Revigo.Core
 				this.properties = properties;
 			}
 
-			public int Compare(GOTerm o1, GOTerm o2)
+			public int Compare(GOTerm? o1, GOTerm? o2)
 			{
 				// -1 - o1 <  o2
 				// 0  - o1 == o2
 				// 1  - o1 >  o2
+
+				// handle nulls
+				if (o1 == null && o2 == null)
+					return 0;
+				if (o1 == null)
+					return -1;
+				if (o2 == null)
+					return 1;
 
 				double repId1 = properties.GetValueByKey(o1.ID).Representative;
 				double repId2 = properties.GetValueByKey(o2.ID).Representative;

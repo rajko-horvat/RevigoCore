@@ -142,7 +142,7 @@ namespace IRB.Revigo.Core
 
 				writer.AppendFormat("{{data:{{id:'GO:{0:d7}',label:'{1}',value:{2},color:'{3}',log_size:{4}}}}}",
 					nodes[i].ID,
-					nodes[i].properties.GetValueByKey("description").ToString().Replace("'", ""),
+					(nodes[i].properties.GetValueByKey("description").ToString() ?? "").Replace("'", ""),
 					Convert.ToString(Math.Round((double)nodes[i].properties.GetValueByKey("value"), 3), CultureInfo.InvariantCulture),
 					nodes[i].properties.GetValueByKey("color"),
 					10 + (int)Math.Floor(((double)nodes[i].properties.GetValueByKey("LogSize") - minSize) * sizeMult));

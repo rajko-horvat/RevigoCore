@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>disable</Nullable>
     <Title>REVIGO (REduce + VIsualize Gene Ontology) Core library</Title>
     <Authors>FranSupek, rajko-horvat</Authors>
     <Copyright>Copyright (c) 2011-2023, Ruđer Bošković Institite</Copyright>
@@ -14,6 +13,7 @@
     <Company>IRB</Company>
     <RepositoryUrl>https://github.com/rajko-horvat/RevigoCore</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
