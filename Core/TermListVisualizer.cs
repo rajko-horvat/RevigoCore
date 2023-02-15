@@ -217,7 +217,7 @@ namespace IRB.Revigo.Core
 		private void MakeOntologram(CancellationToken? token)
 		{
 			RandomMT19937 oRnd = new RandomMT19937(18012021);
-			GeneOntology oOntology = this.oParent.Ontology;
+			GeneOntology? oOntology = this.oParent.Ontology;
 			SpeciesAnnotations? oAnnotations = this.oParent.Annotations;
 
 			if (oAnnotations == null)
@@ -279,10 +279,10 @@ namespace IRB.Revigo.Core
 			if (this.aTerms.Length <= MaxAllowedGOListSize)
 				return;
 
-			GeneOntology oOntology = this.oParent.Ontology;
+			GeneOntology? oOntology = this.oParent.Ontology;
 			SpeciesAnnotations? oAnnotations = this.oParent.Annotations;
 
-			if (oAnnotations == null)
+			if (oAnnotations == null || oOntology == null)
 				return;
 
 			bool allTermsHaveProperty = true;
@@ -355,10 +355,10 @@ namespace IRB.Revigo.Core
 			if (this.oMatrix == null)
 				return;
 
-			GeneOntology oOntology = this.oParent.Ontology;
+			GeneOntology? oOntology = this.oParent.Ontology;
 			SpeciesAnnotations? oAnnotations = this.oParent.Annotations;
 
-			if (oAnnotations == null)
+			if (oAnnotations == null || oOntology == null)
 				return;
 
 			bool keepGreater = true;
@@ -835,7 +835,7 @@ namespace IRB.Revigo.Core
 		private void MakeSimpleThresholdOntolograph(double similarityThreshold, CancellationToken? token)
 		{
 			OntoloGraph result = new OntoloGraph();
-			GeneOntology oOntology = this.oParent.Ontology;
+			GeneOntology? oOntology = this.oParent.Ontology;
 			SpeciesAnnotations? oAnnotations = this.oParent.Annotations;
 			BHashSet<GOTerm> outerTermsProcessed = new BHashSet<GOTerm>();
 			BHashSet<int> termIdsWithConnections = new BHashSet<int>();

@@ -43,7 +43,7 @@ namespace IRB.Revigo.Worker
 		private TimeSpan tsDefaultTimeout = new TimeSpan(0, 20, 0);
 		private const int MaxNonEliminatedTerms = 300;
 
-		private GeneOntology oOntology;
+		private GeneOntology? oOntology;
 		private RequestSourceEnum eRequestSource = RequestSourceEnum.WebPage;
 		private double dCutOff = 0.7;
 		private ValueTypeEnum eValueType = ValueTypeEnum.PValue;
@@ -104,14 +104,14 @@ namespace IRB.Revigo.Worker
 
 		private CancellationTokenSource oToken;
 
-		public RevigoWorker(GeneOntology ontology, SpeciesAnnotations? annotations, TimeSpan timeout, RequestSourceEnum requestSource,
+		public RevigoWorker(GeneOntology? ontology, SpeciesAnnotations? annotations, TimeSpan timeout, RequestSourceEnum requestSource,
 			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityEnum similarity, bool removeObsolete) :
 			this(-1, ontology, annotations, timeout, requestSource,
 			data, cutOff, valueType, similarity, removeObsolete)
 		{
 		}
 
-		public RevigoWorker(int jobID, GeneOntology ontology, SpeciesAnnotations? annotations, TimeSpan timeout, RequestSourceEnum requestSource,
+		public RevigoWorker(int jobID, GeneOntology? ontology, SpeciesAnnotations? annotations, TimeSpan timeout, RequestSourceEnum requestSource,
 			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityEnum similarity, bool removeObsolete)
 		{
 			this.iJobID = jobID;
@@ -136,7 +136,7 @@ namespace IRB.Revigo.Worker
 			get { return this.iJobID; }
 		}
 
-		public GeneOntology Ontology
+		public GeneOntology? Ontology
 		{
 			get
 			{

@@ -99,7 +99,7 @@ namespace IRB.Revigo.Core
 		private double[] ConstructMatrix(CancellationToken? token, ProgressEventHandler? progress)
 		{
 			SemanticSimilarityEnum similarityType = this.oParent.Parent.SemanticSimilarity;
-			GeneOntology myGO = this.oParent.Parent.Ontology;
+			GeneOntology? oOntology = this.oParent.Parent.Ontology;
 			SpeciesAnnotations? oAnnotations = this.oParent.Parent.Annotations;
 			GOTerm[] terms = this.oParent.Terms;
 			int iTermCount = terms.Length;
@@ -108,7 +108,7 @@ namespace IRB.Revigo.Core
 			//this.aMatrix = new double[iTermCount, iTermCount];
 			double[] aMatrix = new double[((iTermCount - 1) * iTermCount) / 2];
 
-			if (oAnnotations == null)
+			if (oAnnotations == null || oOntology == null)
 				return new double[0];
 
 			// reduces memory consumption by half
@@ -119,7 +119,7 @@ namespace IRB.Revigo.Core
 				for (int j = 0; j < i; j++)
 				{
 					GOTerm go2 = terms[j];
-					aMatrix[((i - 1) * i) / 2 + j] = CalculateSemanticSimilarity(similarityType, go1, go2, oAnnotations, myGO);
+					aMatrix[((i - 1) * i) / 2 + j] = CalculateSemanticSimilarity(similarityType, go1, go2, oAnnotations, oOntology);
 				}
 
 				double dProgress = (double)i * dProgressStep;
@@ -145,7 +145,7 @@ namespace IRB.Revigo.Core
 					}
 
 					GOTerm go2 = terms[j];
-					double simil = CalculateSemanticSimilarity(similarityType, go1, go2, oAnnotations, myGO);
+					double simil = CalculateSemanticSimilarity(similarityType, go1, go2, oAnnotations, oOntology);
 
 					this.aMatrix[i, j] = simil;
 					this.aMatrix[j, i] = simil;
