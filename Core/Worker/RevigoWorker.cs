@@ -103,15 +103,18 @@ namespace IRB.Revigo.Core.Worker
 
 		private CancellationTokenSource oToken = new CancellationTokenSource();
 
-		public RevigoWorker(GeneOntology ontology, SpeciesAnnotations annotations, TimeSpan timeout, RequestSourceEnum requestSource,
+		public RevigoWorker(GeneOntology ontology, SpeciesAnnotations? annotations, TimeSpan timeout, RequestSourceEnum requestSource,
 			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityTypeEnum similarity, bool removeObsolete) :
 			this(-1, ontology, annotations, timeout, requestSource, data, cutOff, valueType, similarity, removeObsolete)
 		{
 		}
 
-		public RevigoWorker(int jobID, GeneOntology ontology, SpeciesAnnotations annotations, TimeSpan timeout, RequestSourceEnum requestSource,
+		public RevigoWorker(int jobID, GeneOntology ontology, SpeciesAnnotations? annotations, TimeSpan timeout, RequestSourceEnum requestSource,
 			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityTypeEnum similarity, bool removeObsolete)
 		{
+			if (annotations == null)
+				throw new Exception("Species annotations can't be null");
+
 			this.iJobID = jobID;
 			this.oOntology = ontology;
 			this.oAnnotations = annotations;
