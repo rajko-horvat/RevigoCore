@@ -6,10 +6,10 @@ using System.Text;
 using System.Threading;
 using System.Timers;
 using IRB.Collections.Generic;
-using IRB.Revigo.Databases;
+using IRB.Revigo.Core.Databases;
 using IRB.Revigo.Core;
 
-namespace IRB.Revigo.Worker
+namespace IRB.Revigo.Core.Worker
 {
 	/// <summary>
 	/// 
@@ -43,12 +43,12 @@ namespace IRB.Revigo.Worker
 		private TimeSpan tsDefaultTimeout = new TimeSpan(0, 20, 0);
 		private const int MaxNonEliminatedTerms = 300;
 
-		private GeneOntology? oOntology;
+		private GeneOntology oOntology;
+		private SpeciesAnnotations oAnnotations;
 		private RequestSourceEnum eRequestSource = RequestSourceEnum.WebPage;
 		private double dCutOff = 0.7;
 		private ValueTypeEnum eValueType = ValueTypeEnum.PValue;
-		private SpeciesAnnotations? oAnnotations;
-		private SemanticSimilarityEnum eSemanticSimilarity = SemanticSimilarityEnum.SIMREL;
+		private SemanticSimilarityTypeEnum eSemanticSimilarity = SemanticSimilarityTypeEnum.SIMREL;
 		private bool bRemoveObsolete = true;
 		private string sData;
 
@@ -76,7 +76,7 @@ namespace IRB.Revigo.Worker
 		private List<string> aDevErrors = new List<string>();
 
 		// Results
-		private bool bPinningJob = false;	// prevent OnFinish event when pinning the term
+		private bool bPinningJob = false;   // prevent OnFinish event when pinning the term
 		private bool bDataParsed = false;
 		private bool bRecalculateBP = false;
 		private bool bRecalculateMF = false;
@@ -86,33 +86,31 @@ namespace IRB.Revigo.Worker
 		private int iMinNumColsPerGoTerm = 0;
 
 		// these results need to persist (pinning...)
-		private BHashSet<GOTerm> oAllTerms = new BHashSet<GOTerm>();
-		private BDictionary<int, GOTermProperties> oAllProperties = new BDictionary<int,GOTermProperties>();
-		private List<GOTerm> oBPTerms = new List<GOTerm>();
-		private List<GOTerm> oMFTerms = new List<GOTerm>();
-		private List<GOTerm> oCCTerms = new List<GOTerm>();
-		private BDictionary<string, double>? oEnrichments = null;
-		private BDictionary<string, double>? oCorrelations = null;
-		private TermListVisualizer? oBPVisualizer = null;
-		private TermListVisualizer? oMFVisualizer = null;
-		private TermListVisualizer? oCCVisualizer = null;
+		private BHashSet<GeneOntologyTerm> oAllTerms = new BHashSet<GeneOntologyTerm>();
+		private RevigoTermCollection oBPTerms = new RevigoTermCollection();
+		private RevigoTermCollection oMFTerms = new RevigoTermCollection();
+		private RevigoTermCollection oCCTerms = new RevigoTermCollection();
+		private BDictionary<string, double> oEnrichments = new BDictionary<string, double>();
+		private BDictionary<string, double> oCorrelations = new BDictionary<string, double>();
+		private NamespaceVisualizer oBPVisualizer = NamespaceVisualizer.Empty;
+		private NamespaceVisualizer oMFVisualizer = NamespaceVisualizer.Empty;
+		private NamespaceVisualizer oCCVisualizer = NamespaceVisualizer.Empty;
 
 		private DateTime dtCreateDateTime = DateTime.Now;
 		private TimeSpan tsExecutingTime = new TimeSpan(0);
 
 		public event EventHandler OnFinish = delegate { };
 
-		private CancellationTokenSource oToken;
+		private CancellationTokenSource oToken = new CancellationTokenSource();
 
-		public RevigoWorker(GeneOntology? ontology, SpeciesAnnotations? annotations, TimeSpan timeout, RequestSourceEnum requestSource,
-			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityEnum similarity, bool removeObsolete) :
-			this(-1, ontology, annotations, timeout, requestSource,
-			data, cutOff, valueType, similarity, removeObsolete)
+		public RevigoWorker(GeneOntology ontology, SpeciesAnnotations annotations, TimeSpan timeout, RequestSourceEnum requestSource,
+			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityTypeEnum similarity, bool removeObsolete) :
+			this(-1, ontology, annotations, timeout, requestSource, data, cutOff, valueType, similarity, removeObsolete)
 		{
 		}
 
-		public RevigoWorker(int jobID, GeneOntology? ontology, SpeciesAnnotations? annotations, TimeSpan timeout, RequestSourceEnum requestSource,
-			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityEnum similarity, bool removeObsolete)
+		public RevigoWorker(int jobID, GeneOntology ontology, SpeciesAnnotations annotations, TimeSpan timeout, RequestSourceEnum requestSource,
+			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityTypeEnum similarity, bool removeObsolete)
 		{
 			this.iJobID = jobID;
 			this.oOntology = ontology;
@@ -124,7 +122,6 @@ namespace IRB.Revigo.Worker
 			this.eValueType = valueType;
 			this.eSemanticSimilarity = similarity;
 			this.bRemoveObsolete = removeObsolete;
-			this.oToken = new CancellationTokenSource();
 
 			ValidateCutOff();
 		}
@@ -136,7 +133,7 @@ namespace IRB.Revigo.Worker
 			get { return this.iJobID; }
 		}
 
-		public GeneOntology? Ontology
+		public GeneOntology Ontology
 		{
 			get
 			{
@@ -144,7 +141,7 @@ namespace IRB.Revigo.Worker
 			}
 		}
 
-		public SpeciesAnnotations? Annotations
+		public SpeciesAnnotations Annotations
 		{
 			get
 			{
@@ -207,7 +204,7 @@ namespace IRB.Revigo.Worker
 			}
 		}
 
-		public SemanticSimilarityEnum SemanticSimilarity
+		public SemanticSimilarityTypeEnum SemanticSimilarity
 		{
 			get
 			{
@@ -363,14 +360,6 @@ namespace IRB.Revigo.Worker
 		}
 
 		// results
-		public BDictionary<int, GOTermProperties> AllProperties
-		{
-			get
-			{
-				return this.oAllProperties;
-			}
-		}
-
 		public int TermsWithValuesCount
 		{
 			get
@@ -391,11 +380,11 @@ namespace IRB.Revigo.Worker
 		{
 			get
 			{
-				return this.oBPVisualizer != null && this.oBPVisualizer.Terms.Length > 0;
+				return !this.oBPVisualizer.IsEmpty;
 			}
 		}
 
-		public TermListVisualizer? BPVisualizer
+		public NamespaceVisualizer BPVisualizer
 		{
 			get
 			{
@@ -407,11 +396,11 @@ namespace IRB.Revigo.Worker
 		{
 			get
 			{
-				return this.oMFVisualizer != null && this.oMFVisualizer.Terms.Length > 0;
+				return !this.oMFVisualizer.IsEmpty;
 			}
 		}
 
-		public TermListVisualizer? MFVisualizer
+		public NamespaceVisualizer MFVisualizer
 		{
 			get
 			{
@@ -423,11 +412,11 @@ namespace IRB.Revigo.Worker
 		{
 			get
 			{
-				return this.oCCVisualizer != null && this.oCCVisualizer.Terms.Length > 0;
+				return !this.oCCVisualizer.IsEmpty;
 			}
 		}
 
-		public TermListVisualizer? CCVisualizer
+		public NamespaceVisualizer CCVisualizer
 		{
 			get
 			{
@@ -439,12 +428,11 @@ namespace IRB.Revigo.Worker
 		{
 			get
 			{
-				return (this.oEnrichments != null && this.oEnrichments.Count > 0) || 
-					(this.oCorrelations != null && this.oCorrelations.Count > 0);
+				return this.oEnrichments.Count > 0 || this.oCorrelations.Count > 0;
 			}
 		}
 
-		public BDictionary<string, double>? Enrichments
+		public BDictionary<string, double> Enrichments
 		{
 			get
 			{
@@ -452,7 +440,7 @@ namespace IRB.Revigo.Worker
 			}
 		}
 
-		public BDictionary<string, double>? Correlations
+		public BDictionary<string, double> Correlations
 		{
 			get
 			{
@@ -490,20 +478,16 @@ namespace IRB.Revigo.Worker
 					this.oToken = new CancellationTokenSource();
 					this.bFinished = false;
 					this.oWorkerThread = new Thread(StartRevigo);
-					this.oWorkerThread.Start(oToken.Token);
+					this.oWorkerThread.Start();
 				}
 			}
 		}
 
 		public bool ContainsTermID(int termID)
 		{
-			if (!this.bRunning && this.oOntology != null && this.oOntology.Terms.ContainsKey(termID))
+			if (!this.bRunning && this.oAllTerms.Contains(this.oOntology.Terms.GetValueByKey(termID)))
 			{
-				GOTerm term = this.oOntology.Terms.GetValueByKey(termID);
-				if (this.oAllTerms.Contains(term))
-				{
-					return true;
-				}
+				return true;
 			}
 
 			return false;
@@ -511,47 +495,90 @@ namespace IRB.Revigo.Worker
 
 		public void PinTerm(int termID)
 		{
-			if (!this.bRunning && this.oOntology != null && this.oOntology.Terms.ContainsKey(termID))
+			GeneOntologyTerm term;
+
+			if (!this.bRunning && this.oOntology.Terms.ContainsKey(termID) && this.oAllTerms.Contains(term = this.oOntology.Terms.GetValueByKey(termID)))
 			{
-				GOTerm term = this.oOntology.Terms.GetValueByKey(termID);
-				if (this.oAllTerms.Contains(term))
+				// find the namespace of the term
+				RevigoTerm? nsTerm;
+				this.bRecalculateMixed = true;
+
+				switch (term.Namespace)
 				{
-					GOTermProperties oProperties = this.oAllProperties.GetValueByKey(termID);
-
-					if (oProperties.Pinned)
-					{
-						oProperties.Pinned = false;
-					}
-					else
-					{
-						// pin the term, but also unpin its representative
-						oProperties.Pinned = true;
-						int iRepresentative = oProperties.Representative;
-						if (iRepresentative >= 0)
+					case GeneOntologyNamespaceEnum.BIOLOGICAL_PROCESS:
+						nsTerm = this.oBPTerms.Find(termID);
+						if (nsTerm != null)
 						{
-							this.oAllProperties.GetValueByKey(iRepresentative).Pinned = false;
-						}
-					}
+							if (nsTerm.Pinned)
+							{
+								nsTerm.Pinned = false;
+							}
+							else
+							{
+								// pin the term, but also unpin its representative
+								nsTerm.Pinned = true;
+								RevigoTerm? representative = this.oBPTerms.Find(nsTerm.RepresentativeID);
+								if (representative != null)
+								{
 
-					// find the namespace of the term
-					this.bRecalculateMixed = true;
-					switch (term.Namespace)
-					{
-						case GONamespaceEnum.BIOLOGICAL_PROCESS:
+									representative.Pinned = false;
+								}
+							}
+
 							this.bRecalculateBP = true;
-							break;
-						case GONamespaceEnum.CELLULAR_COMPONENT:
+						}
+						break;
+					case GeneOntologyNamespaceEnum.CELLULAR_COMPONENT:
+						nsTerm = this.oCCTerms.Find(termID);
+						if (nsTerm != null)
+						{
+							if (nsTerm.Pinned)
+							{
+								nsTerm.Pinned = false;
+							}
+							else
+							{
+								// pin the term, but also unpin its representative
+								nsTerm.Pinned = true;
+								RevigoTerm? representative = this.oCCTerms.Find(nsTerm.RepresentativeID);
+								if (representative != null)
+								{
+
+									representative.Pinned = false;
+								}
+							}
+
 							this.bRecalculateCC = true;
-							break;
-						case GONamespaceEnum.MOLECULAR_FUNCTION:
+						}
+						break;
+					case GeneOntologyNamespaceEnum.MOLECULAR_FUNCTION:
+						nsTerm = this.oMFTerms.Find(termID);
+						if (nsTerm != null)
+						{
+							if (nsTerm.Pinned)
+							{
+								nsTerm.Pinned = false;
+							}
+							else
+							{
+								// pin the term, but also unpin its representative
+								nsTerm.Pinned = true;
+								RevigoTerm? representative = this.oMFTerms.Find(nsTerm.RepresentativeID);
+								if (representative != null)
+								{
+
+									representative.Pinned = false;
+								}
+							}
+
 							this.bRecalculateMF = true;
-							break;
-					}
-
-					this.bPinningJob = true;
-
-					this.Start();
+						}
+						break;
 				}
+
+				this.bPinningJob = true;
+
+				this.Start();
 			}
 		}
 
@@ -559,7 +586,7 @@ namespace IRB.Revigo.Worker
 		{
 			lock (this.oWorkerLock)
 			{
-				if (this.bRunning && !oToken.IsCancellationRequested)
+				if (this.bRunning && !this.oToken.IsCancellationRequested)
 				{
 					try
 					{
@@ -584,12 +611,10 @@ namespace IRB.Revigo.Worker
 			}
 		}
 
-		private GONamespaceEnum eCurrentNamespace = GONamespaceEnum.None;
+		private GeneOntologyNamespaceEnum eCurrentNamespace = GeneOntologyNamespaceEnum.None;
 
-		private void StartRevigo(object? token)
+		private void StartRevigo()
 		{
-			CancellationToken? oToken = (token == null) ? null : (CancellationToken)token;
-
 			this.bRunning = true;
 			this.oWorkerTimer = new System.Timers.Timer(tsDefaultTimeout.TotalMilliseconds);
 			this.oWorkerTimer.Elapsed += oWorkerTimer_Elapsed;
@@ -619,12 +644,11 @@ namespace IRB.Revigo.Worker
 				if (!this.bDataParsed)
 				{
 					this.oAllTerms.Clear();
-					this.oAllProperties.Clear();
 					this.oBPTerms.Clear();
 					this.oMFTerms.Clear();
 					this.oCCTerms.Clear();
-					BHashSet<GOTerm> aDuplicateTerms = new BHashSet<GOTerm>();
-					BHashSet<GOTerm> aObsoleteTerms = new BHashSet<GOTerm>();
+					BHashSet<RevigoTerm> aDuplicateTerms = new BHashSet<RevigoTerm>();
+					BHashSet<RevigoTerm> aObsoleteTerms = new BHashSet<RevigoTerm>();
 
 					this.iTermsWithValuesCount = 0;           // a check to see if user provided values for only some (but not all) of the terms
 					this.iMinNumColsPerGoTerm = int.MaxValue;
@@ -649,7 +673,7 @@ namespace IRB.Revigo.Worker
 
 					while ((sLine = oDataReader.ReadLine()) != null)
 					{
-						if (oToken != null && oToken.Value.IsCancellationRequested)
+						if (this.oToken.IsCancellationRequested)
 						{
 							this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
 							return;
@@ -677,33 +701,33 @@ namespace IRB.Revigo.Worker
 							continue;
 						}
 
-						GOTerm? oGOTerm = null;
+						RevigoTerm? oTerm = null;
 						if (this.oOntology.Terms.ContainsKey(iGOID))
 						{
-							oGOTerm = this.oOntology.Terms.GetValueByKey(iGOID);
+							oTerm = new RevigoTerm(this.oOntology.Terms.GetValueByKey(iGOID));
 						}
-						if (oGOTerm == null)
+						if (oTerm == null)
 						{
 							this.aWarnings.Add(string.Format("Go term {0} was not found in the " +
-								"current version of the GeneOntology dated {1}. GO term will be skipped.",
+								"current version of the Gene Ontology dated {1}. GO term will be skipped.",
 								iGOID, this.oOntology.Date.ToString("D", CultureInfo.GetCultureInfo("en-US"))));
 							continue;
 						}
 
-						if (oGOTerm.IsObsolete)
+						if (oTerm.GOTerm.IsObsolete)
 						{
-							if (!aObsoleteTerms.Contains(oGOTerm))
+							if (!aObsoleteTerms.Contains(oTerm))
 							{
-								if (oGOTerm.GOConsiderIDs.Count > 0)
+								if (oTerm.GOTerm.GOConsiderIDs.Count > 0)
 								{
 									StringBuilder sbTemp = new StringBuilder();
 									sbTemp.AppendFormat("The GO term {0} is obsolete ({1}). Consider replacing it with one of the alternative GO term(s): ",
-										oGOTerm.ID, oGOTerm.Comment);
-									for (int i = 0; i < oGOTerm.GOConsiderIDs.Count; i++)
+										oTerm.GOTerm.ID, oTerm.GOTerm.Comment);
+									for (int i = 0; i < oTerm.GOTerm.GOConsiderIDs.Count; i++)
 									{
 										if (i > 0)
 											sbTemp.Append(", ");
-										sbTemp.Append(oGOTerm.GOConsiderIDs[i]);
+										sbTemp.Append(oTerm.GOTerm.GOConsiderIDs[i]);
 									}
 									sbTemp.Append(".");
 									this.aWarnings.Add(sbTemp.ToString());
@@ -711,10 +735,10 @@ namespace IRB.Revigo.Worker
 								else
 								{
 									this.aWarnings.Add(string.Format("The GO term {0} is obsolete ({1}) and there is no replacement term proposed.",
-										oGOTerm.ID, oGOTerm.Comment));
+										oTerm.GOTerm.ID, oTerm.GOTerm.Comment));
 								}
 
-								aObsoleteTerms.Add(oGOTerm);
+								aObsoleteTerms.Add(oTerm);
 							}
 
 							// do not add obsolete terms if required
@@ -722,19 +746,19 @@ namespace IRB.Revigo.Worker
 								continue;
 						}
 
-						if (this.oAllTerms.Contains(oGOTerm))
+						if (this.oAllTerms.Contains(oTerm.GOTerm))
 						{
-							if (!aDuplicateTerms.Contains(oGOTerm))
+							if (!aDuplicateTerms.Contains(oTerm))
 							{
-								if (oGOTerm.AltIDs.Count > 0)
+								if (oTerm.GOTerm.AltIDs.Count > 0)
 								{
 									StringBuilder sbTemp = new StringBuilder();
-									sbTemp.AppendFormat("A duplicate GO term {0} with alternative GO term ID(s) ", oGOTerm.ID);
-									for (int i = 0; i < oGOTerm.AltIDs.Count; i++)
+									sbTemp.AppendFormat("A duplicate GO term {0} with alternative GO term ID(s) ", oTerm.GOTerm.ID);
+									for (int i = 0; i < oTerm.GOTerm.AltIDs.Count; i++)
 									{
 										if (i > 0)
 											sbTemp.Append(", ");
-										sbTemp.Append(oGOTerm.AltIDs[i]);
+										sbTemp.Append(oTerm.GOTerm.AltIDs[i]);
 									}
 									sbTemp.Append(" was found in the submitted data. First will be used and other instance(s) will be skipped.");
 									this.aWarnings.Add(sbTemp.ToString());
@@ -744,20 +768,20 @@ namespace IRB.Revigo.Worker
 									this.aWarnings.Add(string.Format("A duplicate GO term {0} was found " +
 										"in the submitted data. First will be used and other instance(s) will be skipped.", iGOID));
 								}
-								aDuplicateTerms.Add(oGOTerm);
+								aDuplicateTerms.Add(oTerm);
 							}
 							continue;
 						}
 
-						if (iGOID != oGOTerm.ID)
+						if (iGOID != oTerm.GOTerm.ID)
 						{
-							this.aWarnings.Add(string.Format("The GO term {0} has been replaced by or is an alternative of the GO term {1}. The GO term {1} will be used in reports.",
-								iGOID, oGOTerm.ID));
+							this.aWarnings.Add(string.Format("The GO term {0} has been replaced by or is an alternative of the GO term {1}. " +
+								"The GO term {1} will be used in reports.",
+								iGOID, oTerm.GOTerm.ID));
 						}
 
 						// if we found alternate ID, we need to keep the main GO ID
-						iGOID = oGOTerm.ID;
-						GOTermProperties oProperties = new GOTermProperties(iGOID);
+						iGOID = oTerm.GOTerm.ID;
 
 						if (cols.Length == 1)
 						{
@@ -793,11 +817,11 @@ namespace IRB.Revigo.Worker
 							double dUserValue;
 							if (double.TryParse(cols[c], NumberStyles.Number | NumberStyles.AllowExponent, CultureInfo.InvariantCulture, out dUserValue))
 							{
-								oProperties.UserValues.Add(dUserValue);
+								oTerm.UserValues.Add(dUserValue);
 							}
 							else
 							{
-								oProperties.UserValues.Add(double.NaN);
+								oTerm.UserValues.Add(double.NaN);
 							}
 						}
 
@@ -842,31 +866,30 @@ namespace IRB.Revigo.Worker
 									transformedVal = Math.Abs(iValue);
 									break;
 							}
-							oProperties.Value = iValue;
-							oProperties.TransformedValue = transformedVal;
+							oTerm.Value = iValue;
+							oTerm.TransformedValue = transformedVal;
 						}
 
 						// if size not defined, attempts to guess using heuristics ... then add size and frequency attribute to terms
-						oProperties.AnnotationSize = oAnnotations.GetTermSize(iGOID, this.oOntology);
-						oProperties.LogAnnotationSize = Math.Log10(Math.Max(1.0, oProperties.AnnotationSize) + 1.0);
-						oProperties.AnnotationFrequency = oAnnotations.GetTermFrequency(iGOID, this.oOntology);
+						oTerm.AnnotationSize = oAnnotations.GetTermSize(iGOID, this.oOntology);
+						oTerm.LogAnnotationSize = Math.Log10(Math.Max(1.0, oTerm.AnnotationSize) + 1.0);
+						oTerm.AnnotationFrequency = oAnnotations.GetTermFrequency(iGOID, this.oOntology);
 
 						// And finally add term to appropriate namespace and to a common namespace
-						switch (oGOTerm.Namespace)
+						switch (oTerm.GOTerm.Namespace)
 						{
-							case GONamespaceEnum.BIOLOGICAL_PROCESS:
-								this.oBPTerms.Add(oGOTerm);
+							case GeneOntologyNamespaceEnum.BIOLOGICAL_PROCESS:
+								this.oBPTerms.Add(oTerm);
 								break;
-							case GONamespaceEnum.MOLECULAR_FUNCTION:
-								this.oMFTerms.Add(oGOTerm);
+							case GeneOntologyNamespaceEnum.MOLECULAR_FUNCTION:
+								this.oMFTerms.Add(oTerm);
 								break;
-							case GONamespaceEnum.CELLULAR_COMPONENT:
-								this.oCCTerms.Add(oGOTerm);
+							case GeneOntologyNamespaceEnum.CELLULAR_COMPONENT:
+								this.oCCTerms.Add(oTerm);
 								break;
 						}
 
-						this.oAllTerms.Add(oGOTerm);
-						this.oAllProperties.Add(iGOID, oProperties);
+						this.oAllTerms.Add(oTerm.GOTerm);
 					} // line by line in user input file
 
 					if (this.iTermsWithValuesCount > 0 && this.iTermsWithValuesCount < this.oAllTerms.Count)
@@ -881,26 +904,26 @@ namespace IRB.Revigo.Worker
 						"The maximum allowed number of terms in this namespace is {2}. Please reduce the list by an external criterion " +
 						"(e.g. enrichment) before submitting to REVIGO.";
 
-					if (this.oBPTerms.Count > TermListVisualizer.MaxAllowedGOListSize)
+					if (this.oBPTerms.Count > NamespaceVisualizer.MaxAllowedGOListSize)
 					{
 						this.aErrors.Add(string.Format(sHugeListTemplate, this.oBPTerms.Count,
-							GeneOntology.NamespaceToFriendlyString(GONamespaceEnum.BIOLOGICAL_PROCESS), 
-							TermListVisualizer.MaxAllowedGOListSize));
+							GeneOntology.NamespaceToFriendlyString(GeneOntologyNamespaceEnum.BIOLOGICAL_PROCESS),
+							NamespaceVisualizer.MaxAllowedGOListSize));
 
 						return;
 					}
-					if (this.oMFTerms.Count > TermListVisualizer.MaxAllowedGOListSize)
+					if (this.oMFTerms.Count > NamespaceVisualizer.MaxAllowedGOListSize)
 					{
 						this.aErrors.Add(string.Format(sHugeListTemplate, this.oMFTerms.Count,
-							GeneOntology.NamespaceToFriendlyString(GONamespaceEnum.MOLECULAR_FUNCTION), TermListVisualizer.MaxAllowedGOListSize));
+							GeneOntology.NamespaceToFriendlyString(GeneOntologyNamespaceEnum.MOLECULAR_FUNCTION), NamespaceVisualizer.MaxAllowedGOListSize));
 
 						return;
 					}
-					if (this.oCCTerms.Count > TermListVisualizer.MaxAllowedGOListSize)
+					if (this.oCCTerms.Count > NamespaceVisualizer.MaxAllowedGOListSize)
 					{
 						this.aErrors.Add(string.Format(sHugeListTemplate, this.oCCTerms.Count,
-							GeneOntology.NamespaceToFriendlyString(GONamespaceEnum.CELLULAR_COMPONENT), 
-							TermListVisualizer.MaxAllowedGOListSize));
+							GeneOntology.NamespaceToFriendlyString(GeneOntologyNamespaceEnum.CELLULAR_COMPONENT),
+							NamespaceVisualizer.MaxAllowedGOListSize));
 
 						return;
 					}
@@ -930,11 +953,11 @@ namespace IRB.Revigo.Worker
 
 				if (this.bRecalculateBP)
 				{
-					this.eCurrentNamespace = GONamespaceEnum.BIOLOGICAL_PROCESS;
-					this.oBPVisualizer = new TermListVisualizer(this, GONamespaceEnum.BIOLOGICAL_PROCESS, this.oBPTerms.ToArray(),
-						this.oAllProperties, oToken, Visualizer_OnProgress);
+					this.eCurrentNamespace = GeneOntologyNamespaceEnum.BIOLOGICAL_PROCESS;
+					this.oBPVisualizer = new NamespaceVisualizer(this, GeneOntologyNamespaceEnum.BIOLOGICAL_PROCESS, this.oBPTerms,
+						this.oToken, Visualizer_OnProgress);
 
-					if (oToken != null && oToken.Value.IsCancellationRequested)
+					if (this.oToken.IsCancellationRequested)
 					{
 						this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
 						return;
@@ -953,8 +976,8 @@ namespace IRB.Revigo.Worker
 					int iNumNonEliminatedTerms = 0;
 					for (int i = 0; i < this.oBPTerms.Count; i++)
 					{
-						GOTerm curTerm = this.oBPTerms[i];
-						double dDispensability = this.oAllProperties.GetValueByKey(curTerm.ID).Dispensability;
+						RevigoTerm term = this.oBPTerms[i];
+						double dDispensability = term.Dispensability;
 						if (!double.IsNaN(dDispensability) && dDispensability > this.dCutOff)
 						{
 							continue;
@@ -976,11 +999,11 @@ namespace IRB.Revigo.Worker
 
 				if (this.bRecalculateCC)
 				{
-					this.eCurrentNamespace = GONamespaceEnum.CELLULAR_COMPONENT;
-					this.oCCVisualizer = new TermListVisualizer(this, GONamespaceEnum.CELLULAR_COMPONENT, this.oCCTerms.ToArray(),
-						this.oAllProperties, oToken, Visualizer_OnProgress);
+					this.eCurrentNamespace = GeneOntologyNamespaceEnum.CELLULAR_COMPONENT;
+					this.oCCVisualizer = new NamespaceVisualizer(this, GeneOntologyNamespaceEnum.CELLULAR_COMPONENT, this.oCCTerms,
+						this.oToken, Visualizer_OnProgress);
 
-					if (oToken != null && oToken.Value.IsCancellationRequested)
+					if (this.oToken.IsCancellationRequested)
 					{
 						this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
 						return;
@@ -999,8 +1022,8 @@ namespace IRB.Revigo.Worker
 					int iNumNonEliminatedTerms = 0;
 					for (int i = 0; i < this.oCCTerms.Count; i++)
 					{
-						GOTerm curTerm = this.oCCTerms[i];
-						double dDispensability = this.oAllProperties.GetValueByKey(curTerm.ID).Dispensability;
+						RevigoTerm term = this.oCCTerms[i];
+						double dDispensability = term.Dispensability;
 						if (!double.IsNaN(dDispensability) && dDispensability > this.dCutOff)
 						{
 							continue;
@@ -1022,11 +1045,11 @@ namespace IRB.Revigo.Worker
 
 				if (this.bRecalculateMF)
 				{
-					this.eCurrentNamespace = GONamespaceEnum.MOLECULAR_FUNCTION;
-					this.oMFVisualizer = new TermListVisualizer(this, GONamespaceEnum.MOLECULAR_FUNCTION, this.oMFTerms.ToArray(),
-						this.oAllProperties, oToken, Visualizer_OnProgress);
+					this.eCurrentNamespace = GeneOntologyNamespaceEnum.MOLECULAR_FUNCTION;
+					this.oMFVisualizer = new NamespaceVisualizer(this, GeneOntologyNamespaceEnum.MOLECULAR_FUNCTION, this.oMFTerms.ToArray(),
+						this.oToken, Visualizer_OnProgress);
 
-					if (oToken != null && oToken.Value.IsCancellationRequested)
+					if (this.oToken.IsCancellationRequested)
 					{
 						this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
 						return;
@@ -1045,8 +1068,8 @@ namespace IRB.Revigo.Worker
 					int iNumNonEliminatedTerms = 0;
 					for (int i = 0; i < this.oMFTerms.Count; i++)
 					{
-						GOTerm curTerm = this.oMFTerms[i];
-						double dDispensability = this.oAllProperties.GetValueByKey(curTerm.ID).Dispensability;
+						RevigoTerm term = this.oMFTerms[i];
+						double dDispensability = term.Dispensability;
 						if (!double.IsNaN(dDispensability) && dDispensability > this.dCutOff)
 						{
 							continue;
@@ -1057,7 +1080,8 @@ namespace IRB.Revigo.Worker
 					if (iNumNonEliminatedTerms > MaxNonEliminatedTerms)
 					{
 						this.aWarnings.Add(
-							string.Format("Your resulting list of GO terms for {0} namespace seems to be quite long. If you want to reduce it further, go Back and choose a different size for your resulting list.",
+							string.Format("Your resulting list of GO terms for {0} namespace seems to be quite long. " +
+							"If you want to reduce it further, go Back and choose a different size for your resulting list.",
 							GeneOntology.NamespaceToFriendlyString(this.oMFVisualizer.Namespace)));
 					}
 
@@ -1069,12 +1093,12 @@ namespace IRB.Revigo.Worker
 				{
 					this.dProgress = this.dProgressPos = 95.0;
 					this.dProgressSlice = 4.0;
-					this.sProgressText = "Calculating data for " + GeneOntology.NamespaceToFriendlyString(GONamespaceEnum.MIXED_NAMESPACE);
+					this.sProgressText = "Calculating data for " + GeneOntology.NamespaceToFriendlyString(GeneOntologyNamespaceEnum.MIXED_NAMESPACE);
 
-					GOTermWordCorpus corpus = new GOTermWordCorpus(this.oAllTerms, this.oOntology);
+					GeneOntologyWordCorpus corpus = new GeneOntologyWordCorpus(this.oAllTerms, this.oOntology);
 					this.oEnrichments = corpus.calculateWordEnrichment(this.oAnnotations.WordCorpus, 70, 0);
 
-					if (oToken != null && oToken.Value.IsCancellationRequested)
+					if (this.oToken.IsCancellationRequested)
 					{
 						this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
 						return;
@@ -1082,11 +1106,11 @@ namespace IRB.Revigo.Worker
 
 					if (this.iTermsWithValuesCount != 0)
 					{
-						GOTermWordCorpus correlCorpus = new GOTermWordCorpus(this.oAllTerms, this.oAllProperties, this.oOntology);
+						GeneOntologyWordCorpus correlCorpus = new GeneOntologyWordCorpus(this.oAllTerms, this.oOntology);
 						this.oCorrelations = correlCorpus.getMostFrequentWords(70);
 					}
 
-					if (oToken != null && oToken.Value.IsCancellationRequested)
+					if (this.oToken.IsCancellationRequested)
 					{
 						this.aErrors.Add("The Revigo didn't finish processing your data in a timely fashion.");
 						return;
@@ -1104,10 +1128,7 @@ namespace IRB.Revigo.Worker
 					this.aWarnings.Add("You have provided more than one number alongside each GO term. Note that only the first value following the GO term will be used to select and cluster GO terms, although others values will be available in the scatterplot and the table view.");
 				}
 
-				if ((this.oBPVisualizer == null || this.oBPVisualizer.Terms.Length == 0) &&
-					(this.oCCVisualizer == null || this.oCCVisualizer.Terms.Length == 0) &&
-					(this.oMFVisualizer == null || this.oMFVisualizer.Terms.Length == 0) &&
-					this.oAllTerms.Count == 0)
+				if (this.oBPVisualizer.IsEmpty && this.oCCVisualizer.IsEmpty && this.oMFVisualizer.IsEmpty)
 				{
 					this.aErrors.Add("Your query has produced no results in any namespace, please return to the input page and correct the error.");
 				}
@@ -1118,7 +1139,7 @@ namespace IRB.Revigo.Worker
 			catch (Exception ex)
 			{
 				this.aErrors.Add("Unknown error has occured.");
-				if (oToken != null && !oToken.Value.IsCancellationRequested)
+				if (!this.oToken.IsCancellationRequested)
 				{
 					this.aDevErrors.Add(string.Format("Exception: {0}", ex.Message));
 					this.aDevErrors.Add(string.Format("Stack trace: {0}", ex.StackTrace));
@@ -1149,7 +1170,7 @@ namespace IRB.Revigo.Worker
 			{
 				StringBuilder sb = new StringBuilder();
 				sb.Append(e.Description);
-				if (this.eCurrentNamespace != GONamespaceEnum.None)
+				if (this.eCurrentNamespace != GeneOntologyNamespaceEnum.None)
 				{
 					sb.AppendFormat(" for {0} namespace", GeneOntology.NamespaceToFriendlyString(this.eCurrentNamespace));
 				}

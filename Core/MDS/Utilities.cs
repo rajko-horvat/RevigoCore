@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IRB.MDS
+namespace IRB.Revigo.Core.MDS
 {
 	/// <summary>
 	/// The MDS algorithm implementation, utilities

@@ -4,17 +4,17 @@ using System.Text;
 using System.Xml.Serialization;
 using IRB.Collections.Generic;
 
-namespace IRB.Revigo.Databases
+namespace IRB.Revigo.Core.Databases
 {
 	/// <summary>
 	/// Class representing a single Gene Ontology term.
 	///
-	/// The GOTerm must have at least one unique ID (of type int) specified at time
+	/// The GeneOntologyTerm must have at least one unique ID (of type int) specified at time
 	/// of creation, but may also have many alternate unique IDs.
 	/// 
-	/// The GOTerm may have a name, and it may have a number of alternate names.
+	/// The GeneOntologyTerm may have a name, and it may have a number of alternate names.
 	/// 
-	/// The GOTerm may have zero, one or many parent nodes.
+	/// The GeneOntologyTerm may have zero, one or many parent nodes.
 	/// 
 	/// Authors:
 	/// 	Fran Supek (fsupek at irb.hr)
@@ -41,13 +41,13 @@ namespace IRB.Revigo.Databases
 	/// 	ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	/// </summary>
 	[Serializable]
-	public class GOTerm : IComparable<GOTerm>, IComparer<GOTerm>, IEqualityComparer<GOTerm>
+	public class GeneOntologyTerm : IComparable<GeneOntologyTerm>, IComparer<GeneOntologyTerm>, IEqualityComparer<GeneOntologyTerm>
 	{
 		// The GeneOntology object this term belongs to.
 		private GeneOntology? oOntology = null;
 		private int iID = -1; // The main unique ID for the node.
 		private BHashSet<int> aAltIDs = new BHashSet<int>(); // List of alternate IDs for the node.
-		private GONamespaceEnum eNamespace; // The namespace this term belongs to.
+		private GeneOntologyNamespaceEnum eNamespace; // The namespace this term belongs to.
 		private string? sName = null; // The main name of the node.
 		private List<string> aAltNames = new List<string>(); // List of alternate names for the node
 		private string? sDescription = null;
@@ -69,15 +69,15 @@ namespace IRB.Revigo.Databases
 
 		private BHashSet<string> aKeywords = new BHashSet<string>();
 
-		public GOTerm()
+		public GeneOntologyTerm()
 		{
 		}
 
 		/// <summary>
-		/// A unique ID (integer) must be specified for the GOTerm at the time of construction.
+		/// A unique ID (integer) must be specified for the GeneOntologyTerm at the time of construction.
 		/// </summary>
-		/// <param name="id">The main unique ID for the GOTerm.</param>
-		public GOTerm(GeneOntology geneOntology, int id)
+		/// <param name="id">The main unique ID for the GeneOntologyTerm.</param>
+		public GeneOntologyTerm(GeneOntology geneOntology, int id)
 		{
 			this.oOntology = geneOntology;
 			this.iID = id;
@@ -95,7 +95,7 @@ namespace IRB.Revigo.Databases
 			{
 				if (this.oOntology != null && this.oOntology.Terms.ContainsKey(this.aGOParentIDs[j]))
 				{
-					GOTerm parent = this.oOntology.Terms.GetValueByKey(this.aGOParentIDs[j]);
+					GeneOntologyTerm parent = this.oOntology.Terms.GetValueByKey(this.aGOParentIDs[j]);
 
 					this.aParentIDs.Add(parent.ID);
 					parent.ChildrenIDs.Add(this.iID);
@@ -131,7 +131,7 @@ namespace IRB.Revigo.Databases
 					foreach (int parentID in this.aParentIDs)
 					{
 						allParentIDs.Add(parentID);
-						GOTerm parent = this.oOntology.Terms.GetValueByKey(parentID);
+						GeneOntologyTerm parent = this.oOntology.Terms.GetValueByKey(parentID);
 						if (!parent.ReferencesInitialized)
 							parent.InitializeReferences();
 
@@ -145,7 +145,7 @@ namespace IRB.Revigo.Databases
 				this.aAllParentIDs = allParentIDs;
 				bReferencesInitialized = true;
 
-				GOTerm curNode = this;
+				GeneOntologyTerm curNode = this;
 				if (this.oOntology != null)
 				{
 					while (!curNode.IsRootNode)
@@ -245,7 +245,7 @@ namespace IRB.Revigo.Databases
 		}
 
 		/// <summary>
-		/// Returns the main unique ID of the GOTerm.
+		/// Returns the main unique ID of the GeneOntologyTerm.
 		/// </summary>
 		public int ID
 		{
@@ -263,7 +263,7 @@ namespace IRB.Revigo.Databases
 			get { return string.Format("GO:{0:d7}", this.iID); }
 		}
 
-		public GONamespaceEnum Namespace
+		public GeneOntologyNamespaceEnum Namespace
 		{
 			get { return this.eNamespace; }
 			set { this.eNamespace = value; }
@@ -282,7 +282,7 @@ namespace IRB.Revigo.Databases
 		}
 
 		/// <summary>
-		/// Returns a list of alternate IDs for the GOTerm.
+		/// Returns a list of alternate IDs for the GeneOntologyTerm.
 		/// </summary>
 		public BHashSet<int> AltIDs
 		{
@@ -290,7 +290,7 @@ namespace IRB.Revigo.Databases
 		}
 
 		/// <summary>
-		/// Gets or sets the name of the GOTerm.
+		/// Gets or sets the name of the GeneOntologyTerm.
 		/// </summary>
 		/// <param name="name"></param>
 		public string? Name
@@ -300,7 +300,7 @@ namespace IRB.Revigo.Databases
 		}
 
 		/// <summary>
-		/// Returns a list of alternate names for the GOTerm.
+		/// Returns a list of alternate names for the GeneOntologyTerm.
 		/// </summary>
 		public List<string> AltNames
 		{
@@ -364,7 +364,7 @@ namespace IRB.Revigo.Databases
 		}
 
 		/// <summary>
-		/// Returns the children of this GOTerm object.
+		/// Returns the children of this GeneOntologyTerm object.
 		/// </summary>
 		public BHashSet<int> ChildrenIDs
 		{
@@ -410,11 +410,11 @@ namespace IRB.Revigo.Databases
 		}
 
 		/// <summary>
-		/// Returns a new set with references to all of the parent GOTerms that this GoTerm has in common with another GOTerm
+		/// Returns a new set with references to all of the parent GOTerms that this GoTerm has in common with another GeneOntologyTerm
 		/// </summary>
 		/// <param name="anotherTerm"></param>
 		/// <returns></returns>
-		public BHashSet<int> GetAllCommonParents(GOTerm anotherTerm)
+		public BHashSet<int> GetAllCommonParents(GeneOntologyTerm anotherTerm)
 		{
 			BHashSet<int> result = new BHashSet<int>();
 			BHashSet<int> myParentIDs = this.AllParentIDs;
@@ -443,7 +443,7 @@ namespace IRB.Revigo.Databases
 			{
 				foreach (int parentID in this.aParentIDs)
 				{
-					GOTerm parent = this.oOntology.Terms.GetValueByKey(parentID);
+					GeneOntologyTerm parent = this.oOntology.Terms.GetValueByKey(parentID);
 
 					foreach (int child in parent.ChildrenIDs)
 					{
@@ -460,15 +460,15 @@ namespace IRB.Revigo.Databases
 		/// <summary>
 		/// Two nodes are equal if they have equal unique IDs
 		/// </summary>
-		/// <param name="obj">A GOTerm to compare to</param>
+		/// <param name="obj">A GeneOntologyTerm to compare to</param>
 		/// <returns>True if two nodes have the same unique ID</returns>
 		public override bool Equals(object? obj)
 		{
-			if (obj == null || (!obj.GetType().Equals(typeof(GOTerm)) && !obj.GetType().IsSubclassOf(typeof(GOTerm))))
+			if (obj == null || (!obj.GetType().Equals(typeof(GeneOntologyTerm)) && !obj.GetType().IsSubclassOf(typeof(GeneOntologyTerm))))
 			{
 				return false;
 			}
-			GOTerm other = (GOTerm)obj;
+			GeneOntologyTerm other = (GeneOntologyTerm)obj;
 			if (this.iID != other.iID)
 			{
 				return false;
@@ -491,18 +491,18 @@ namespace IRB.Revigo.Databases
 			return string.Format("{0}:{1}", this.iID, this.sName);
 		}
 
-		#region IComparable<GOTerm> Members
+		#region IComparable<GeneOntologyTerm> Members
 
-		public int CompareTo(GOTerm? other)
+		public int CompareTo(GeneOntologyTerm? other)
 		{
 			return (other == null) ? 1 : this.iID.CompareTo(other.iID);
 		}
 
 		#endregion
 
-		#region IComparer<GOTerm> Members
+		#region IComparer<GeneOntologyTerm> Members
 
-		public int Compare(GOTerm? x, GOTerm? y)
+		public int Compare(GeneOntologyTerm? x, GeneOntologyTerm? y)
 		{
 			if (x == null && y == null)
 				return 0;
@@ -516,9 +516,9 @@ namespace IRB.Revigo.Databases
 
 		#endregion
 
-		#region IEqualityComparer<GOTerm> Members
+		#region IEqualityComparer<GeneOntologyTerm> Members
 
-		public bool Equals(GOTerm? x, GOTerm? y)
+		public bool Equals(GeneOntologyTerm? x, GeneOntologyTerm? y)
 		{
 			if (x == null && y == null)
 				return true;
@@ -528,7 +528,7 @@ namespace IRB.Revigo.Databases
 			return x.ID == y.ID;
 		}
 
-		public int GetHashCode(GOTerm obj)
+		public int GetHashCode(GeneOntologyTerm obj)
 		{
 			return obj.GetHashCode();
 		}

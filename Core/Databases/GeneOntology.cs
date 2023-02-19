@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Text;
 using System.IO.Compression;
-using System.IO;
 using IRB.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Web;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Xml.Serialization;
 
-namespace IRB.Revigo.Databases
+namespace IRB.Revigo.Core.Databases
 {
 	/// <summary>
 	/// A class representing the Gene Ontology.
@@ -40,7 +38,7 @@ namespace IRB.Revigo.Databases
 	public class GeneOntology
 	{
 		// As given in the header of the OBO-XML file.
-		private BDictionary<int, GOTerm> aTerms = new BDictionary<int, GOTerm>();
+		private BDictionary<int, GeneOntologyTerm> aTerms = new BDictionary<int, GeneOntologyTerm>();
 		private DateTime dtDate = DateTime.MinValue;
 		private string? sLink = null;
 
@@ -105,11 +103,11 @@ namespace IRB.Revigo.Databases
 			// now, kill obsolete terms
 			for (int i = 0; i < this.aTerms.Count; i++)
 			{
-				GOTerm curTerm = this.aTerms[i].Value;
+				GeneOntologyTerm curTerm = this.aTerms[i].Value;
 				if (curTerm.IsObsolete && curTerm.GOReplacementIDs.Count > 0)
 				{
 					// use first replacement term
-					GOTerm replTerm = this.aTerms.GetValueByKey(curTerm.GOReplacementIDs[0]);
+					GeneOntologyTerm replTerm = this.aTerms.GetValueByKey(curTerm.GOReplacementIDs[0]);
 					replTerm.AltIDs.Add(curTerm.ID);
 					replTerm.AltIDs.AddRange((IEnumerable<int>)curTerm.AltIDs);
 
@@ -154,7 +152,7 @@ namespace IRB.Revigo.Databases
 			Regex rxSectionTag = new Regex(@"^\s*\[\s*([\w\-]+)\s*\]\s*$", RegexOptions.Compiled);
 			Regex rxItemTag = new Regex(@"^\s*([\w\-]+)\s*\:\s*(.*?)\s*$", RegexOptions.Compiled);
 			Regex rxValueString = new Regex("^\"((?:[^\"]|\\.)+)\"\\s*(.*?)\\s*$", RegexOptions.Compiled);
-			GOTerm? oCurrentTerm = null;
+			GeneOntologyTerm? oCurrentTerm = null;
 			bool bInTerm = false;
 			bool bInHeader = true;
 
@@ -209,7 +207,7 @@ namespace IRB.Revigo.Databases
 					switch (sItem)
 					{
 						case "id":
-							oCurrentTerm = new GOTerm(this, ParseGOID(sItemValue));
+							oCurrentTerm = new GeneOntologyTerm(this, ParseGOID(sItemValue));
 							break;
 						case "name":
 							if (oCurrentTerm != null && oCurrentTerm.Name == null)
@@ -218,9 +216,9 @@ namespace IRB.Revigo.Databases
 							}
 							break;
 						case "namespace":
-							if (oCurrentTerm != null && oCurrentTerm.Namespace == GONamespaceEnum.None)
+							if (oCurrentTerm != null && oCurrentTerm.Namespace == GeneOntologyNamespaceEnum.None)
 							{
-								oCurrentTerm.Namespace = (GONamespaceEnum)Enum.Parse(typeof(GONamespaceEnum),
+								oCurrentTerm.Namespace = (GeneOntologyNamespaceEnum)Enum.Parse(typeof(GeneOntologyNamespaceEnum),
 									sItemValue, true);
 							}
 							break;
@@ -379,7 +377,7 @@ namespace IRB.Revigo.Databases
 			Regex rxClosedHTMLTag = new Regex(@"^\s*\<\s*/([\w\-]+)\s*\>\s*$", RegexOptions.Compiled);
 			Regex rxHTMLTag = new Regex(@"^\s*\<\s*([\w\-]+)(?:(?:\s*\>)|(?:\s+[^\>]+\>))\s*([^\<]*)\s*<\s*/([\w\-]+)\s*\>\s*$", RegexOptions.Compiled);
 			Stack<string> oOpenTags = new Stack<string>();
-			GOTerm? oCurrentTerm = null;
+			GeneOntologyTerm? oCurrentTerm = null;
 			bool bInTerm = false;
 			bool bInHeader = false;
 
@@ -406,7 +404,7 @@ namespace IRB.Revigo.Databases
 							switch (sOpeningTag)
 							{
 								case "id":
-									oCurrentTerm = new GOTerm(this, ParseGOID(sTagValue));
+									oCurrentTerm = new GeneOntologyTerm(this, ParseGOID(sTagValue));
 									break;
 								case "name":
 									if (oCurrentTerm != null && oCurrentTerm.Name == null)
@@ -415,9 +413,9 @@ namespace IRB.Revigo.Databases
 									}
 									break;
 								case "namespace":
-									if (oCurrentTerm != null && oCurrentTerm.Namespace == GONamespaceEnum.None)
+									if (oCurrentTerm != null && oCurrentTerm.Namespace == GeneOntologyNamespaceEnum.None)
 									{
-										oCurrentTerm.Namespace = (GONamespaceEnum)Enum.Parse(typeof(GONamespaceEnum),
+										oCurrentTerm.Namespace = (GeneOntologyNamespaceEnum)Enum.Parse(typeof(GeneOntologyNamespaceEnum),
 											sTagValue, true);
 									}
 									break;
@@ -534,7 +532,7 @@ namespace IRB.Revigo.Databases
 								if (!bInTerm)
 									throw new ArgumentException("The OBO-XML has mismatched term tags.");
 								bInTerm = false;
-								if (oCurrentTerm == null || oCurrentTerm.Name == null || oCurrentTerm.Namespace == GONamespaceEnum.None)
+								if (oCurrentTerm == null || oCurrentTerm.Name == null || oCurrentTerm.Namespace == GeneOntologyNamespaceEnum.None)
 									throw new ArgumentException("The term has undefined ID, Name or Namespace in OBO-XML file.");
 								this.aTerms.Add(oCurrentTerm.ID, oCurrentTerm);
 								oCurrentTerm = null;
@@ -704,12 +702,12 @@ namespace IRB.Revigo.Databases
 		/// <summary>
 		/// The Terms that constitue Gene Ontology
 		/// </summary>
-		public BDictionary<int, GOTerm> Terms
+		public BDictionary<int, GeneOntologyTerm> Terms
 		{
 			get { return this.aTerms; }
 		}
 
-		public static string NamespaceToFriendlyString(GONamespaceEnum name)
+		public static string NamespaceToFriendlyString(GeneOntologyNamespaceEnum name)
 		{
 			string friendlyName = name.ToString().Replace('_', ' ').Trim().ToLower();
 			int iPos = 0;
@@ -773,7 +771,7 @@ namespace IRB.Revigo.Databases
 			GeneOntology newObj = (GeneOntology)obj;
 			for (int i = 0; i < newObj.Terms.Count; i++)
 			{
-				GOTerm term = newObj.Terms[i].Value;
+				GeneOntologyTerm term = newObj.Terms[i].Value;
 				term.ReferencesInitialized = true;
 				term.OntologyInternal = newObj;
 			}

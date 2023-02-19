@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace IRB.Revigo
+namespace IRB.Revigo.Core
 {
 	/// <summary>
 	/// 

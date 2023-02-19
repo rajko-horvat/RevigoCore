@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Data.Common;
 using IRB.Collections.Generic;
-using IRB.Revigo.Databases;
-using IRB.Revigo.Worker;
+using IRB.Revigo.Core.Databases;
+using IRB.Revigo.Core.Worker;
 
 namespace IRB.Revigo.Core
 {
@@ -30,9 +29,12 @@ namespace IRB.Revigo.Core
 	/// 	DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
 	/// 	ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	/// </summary>
-	public class TermSimilarityMatrix
+	public class SemanticSimilarityMatrix
 	{
-		private TermListVisualizer oParent;
+		// we will preserve a copy of the terms
+		RevigoTermCollection aTerms;
+		// we also want to cache GOTermID and Index pairs
+		BDictionary<int, int> aGOTermIDIndexes = new BDictionary<int, int>();
 
 		//private double[,] aMatrix = null;
 		private double[] aMatrix;
@@ -41,34 +43,33 @@ namespace IRB.Revigo.Core
 		/// Constructs a distance matrix of all the GO terms present in termList.
 		/// </summary>
 		/// <param name="parent"></param>
-		public TermSimilarityMatrix(TermListVisualizer parent)
-			: this(parent, null, null)
+		public SemanticSimilarityMatrix(SemanticSimilarityTypeEnum similarityType, GeneOntology ontology, SpeciesAnnotations annotations, 
+			RevigoTermCollection terms)
+			: this(similarityType, ontology, annotations, terms, null, null)
 		{ }
 
 		/// <summary>
 		/// Constructs a distance matrix of all the GO terms present in termList.
 		/// </summary>
 		/// <param name="parent"></param>
-		public TermSimilarityMatrix(TermListVisualizer parent, CancellationToken? token)
-			: this(parent, token, null)
+		public SemanticSimilarityMatrix(SemanticSimilarityTypeEnum similarityType, GeneOntology ontology, SpeciesAnnotations annotations, 
+			RevigoTermCollection terms, CancellationTokenSource? token)
+			: this(similarityType, ontology, annotations, terms, token, null)
 		{ }
 
 		/// <summary>
 		/// Constructs a distance matrix of all the GO terms present in termList.
 		/// </summary>
 		/// <param name="parent"></param>
-		public TermSimilarityMatrix(TermListVisualizer parent, CancellationToken? token, ProgressEventHandler? progress)
+		public SemanticSimilarityMatrix(SemanticSimilarityTypeEnum similarityType, GeneOntology ontology, SpeciesAnnotations annotations, 
+			RevigoTermCollection terms,	CancellationTokenSource? token, ProgressEventHandler? progress)
 		{
-			this.oParent = parent;
-			this.aMatrix = ConstructMatrix(token, progress);
-		}
-
-		public TermListVisualizer Parent
-		{
-			get
+			this.aTerms = new RevigoTermCollection(terms);
+			for (int i = 0; i < this.aTerms.Count; i++)
 			{
-				return this.oParent;
+				this.aGOTermIDIndexes.Add(this.aTerms[i].GOTerm.ID, i);
 			}
+			this.aMatrix = ConstructMatrix(similarityType, ontology, annotations, token, progress);
 		}
 
 		/*public double[,] Matrix
@@ -79,7 +80,35 @@ namespace IRB.Revigo.Core
 			}
 		}*/
 
-		public double GetValue(int row, int column)
+		public RevigoTermCollection Terms
+		{
+			get { return this.aTerms; }
+		}
+
+		public double GetSimilarityByGOTermID(int term1ID, int term2ID)
+		{
+			if (!this.aGOTermIDIndexes.ContainsKey(term1ID) || !this.aGOTermIDIndexes.ContainsKey(term2ID))
+				return 0.0;
+
+			if (term1ID == term2ID)
+				return 1.0;
+
+			int row = this.aGOTermIDIndexes.GetValueByKey(term1ID);
+			int column = this.aGOTermIDIndexes.GetValueByKey(term2ID);
+
+			int iRow = row;
+			int iColumn = column - 1;
+
+			if (iRow > iColumn)
+			{
+				iRow = column;
+				iColumn = row - 1;
+			}
+
+			return this.aMatrix[(iColumn * (iColumn + 1)) / 2 + iRow];
+		}
+
+		public double GetSimilarity(int row, int column)
 		{
 			if (row == column)
 				return 1.0;
@@ -96,43 +125,40 @@ namespace IRB.Revigo.Core
 			return this.aMatrix[(iColumn * (iColumn + 1)) / 2 + iRow];
 		}
 
-		private double[] ConstructMatrix(CancellationToken? token, ProgressEventHandler? progress)
+		private double[] ConstructMatrix(SemanticSimilarityTypeEnum similarityType, GeneOntology ontology, SpeciesAnnotations annotations,
+			CancellationTokenSource? token, ProgressEventHandler? progressEvent)
 		{
-			SemanticSimilarityEnum similarityType = this.oParent.Parent.SemanticSimilarity;
-			GeneOntology? oOntology = this.oParent.Parent.Ontology;
-			SpeciesAnnotations? oAnnotations = this.oParent.Parent.Annotations;
-			GOTerm[] terms = this.oParent.Terms;
-			int iTermCount = terms.Length;
+			int iTermCount = this.aTerms.Count;
 			double dProgressStep = 100.0 / (double)iTermCount;
 			double dOldProgress = 0.0;
 			//this.aMatrix = new double[iTermCount, iTermCount];
 			double[] aMatrix = new double[((iTermCount - 1) * iTermCount) / 2];
 
-			if (oAnnotations == null || oOntology == null)
-				return new double[0];
-
 			// reduces memory consumption by half
 			for (int i = 1; i < iTermCount; i++)
 			{
-				GOTerm go1 = terms[i];
+				RevigoTerm term1 = this.aTerms[i];
 
 				for (int j = 0; j < i; j++)
 				{
-					GOTerm go2 = terms[j];
-					aMatrix[((i - 1) * i) / 2 + j] = CalculateSemanticSimilarity(similarityType, go1, go2, oAnnotations, oOntology);
+					RevigoTerm term2 = this.aTerms[j];
+					aMatrix[((i - 1) * i) / 2 + j] = CalculateSemanticSimilarity(similarityType, term1.GOTerm, term2.GOTerm, annotations, ontology);
 				}
 
+				if (token != null && token.IsCancellationRequested)
+					break;
+
 				double dProgress = (double)i * dProgressStep;
-				if ((dProgress - dOldProgress) >= 0.1 && progress != null)
+				if ((dProgress - dOldProgress) >= 0.1 && progressEvent != null)
 				{
 					dOldProgress = dProgress;
-					progress(this, new ProgressEventArgs(dProgress));
+					progressEvent(this, new ProgressEventArgs(dProgress));
 				}
 			}
 
 			/*for (int i = 0; i < iTermCount; i++)
 			{
-				GOTerm go1 = terms[i];
+				GeneOntologyTerm go1 = terms[i];
 
 				this.aMatrix[i, i] = 1.0;
 
@@ -144,7 +170,7 @@ namespace IRB.Revigo.Core
 						return;
 					}
 
-					GOTerm go2 = terms[j];
+					GeneOntologyTerm go2 = terms[j];
 					double simil = CalculateSemanticSimilarity(similarityType, go1, go2, oAnnotations, oOntology);
 
 					this.aMatrix[i, j] = simil;
@@ -179,16 +205,17 @@ namespace IRB.Revigo.Core
 		/// (Schlicker et al. BMC Bioinformatics 2006)
 		/// </summary>
 		/// <returns></returns>
-		private double CalculateSemanticSimilarity(SemanticSimilarityEnum similarityType, GOTerm term1, GOTerm term2, SpeciesAnnotations annotations, GeneOntology myGo)
+		private double CalculateSemanticSimilarity(SemanticSimilarityTypeEnum similarityType, GeneOntologyTerm term1, GeneOntologyTerm term2, 
+			SpeciesAnnotations annotations, GeneOntology ontology)
 		{
 			if (term1.ID == term2.ID)
 				return 1.0;
 
-			if (!myGo.Terms.ContainsKey(term1.ID) || !myGo.Terms.ContainsKey(term2.ID))
+			if (!ontology.Terms.ContainsKey(term1.ID) || !ontology.Terms.ContainsKey(term2.ID))
 				return 0.0;
 
-			double term1Freq = annotations.GetTermFrequency(term1.ID, myGo);
-			double term2Freq = annotations.GetTermFrequency(term2.ID, myGo);
+			double term1Freq = annotations.GetTermFrequency(term1.ID, ontology);
+			double term2Freq = annotations.GetTermFrequency(term2.ID, ontology);
 
 			// first find frequency of most informative parent
 			// (also called MIA or Most Informative Common Ancestor)
@@ -197,26 +224,26 @@ namespace IRB.Revigo.Core
 			double freqOfMostInfoParent = 1.0;
 			foreach (int termID in commonParents)
 			{
-				freqOfMostInfoParent = Math.Min(freqOfMostInfoParent, annotations.GetTermFrequency(termID, myGo));
+				freqOfMostInfoParent = Math.Min(freqOfMostInfoParent, annotations.GetTermFrequency(termID, ontology));
 			}
 
 			double curValue;
 
 			switch (similarityType)
 			{
-				case SemanticSimilarityEnum.RESNIK: // normalized to [0,1]; we assume 4 is a 'very large' value
+				case SemanticSimilarityTypeEnum.RESNIK: // normalized to [0,1]; we assume 4 is a 'very large' value
 					curValue = Math.Min(-Math.Log10(freqOfMostInfoParent), 4.0) / 4.0;
 					break;
-				case SemanticSimilarityEnum.LIN:
+				case SemanticSimilarityTypeEnum.LIN:
 					curValue = 2.0 * Math.Log10(freqOfMostInfoParent) /
 						(Math.Log10(term1Freq) + Math.Log10(term2Freq));
 					break;
-				case SemanticSimilarityEnum.SIMREL:
+				case SemanticSimilarityTypeEnum.SIMREL:
 					curValue = 2.0 * Math.Log10(freqOfMostInfoParent) /
 						(Math.Log10(term1Freq) + Math.Log10(term2Freq));
 					curValue *= (1.0 - freqOfMostInfoParent);
 					break;
-				case SemanticSimilarityEnum.JIANG:
+				case SemanticSimilarityTypeEnum.JIANG:
 					curValue = 1.0 / (-Math.Log10(term1Freq) - Math.Log10(term2Freq) +
 						2 * Math.Log10(freqOfMostInfoParent) + 1.0);
 					break;
@@ -236,11 +263,9 @@ namespace IRB.Revigo.Core
 		/// The "commonness" will be stored as a property in the provided
 		/// GoTermProperties object (this will overwrite old values of "uniqueness", if present).
 		/// </summary>
-		public void CalculateUniqueness(CancellationToken? token)
+		public void CalculateUniqueness(CancellationTokenSource token)
 		{
-			GOTerm[] terms = this.oParent.Terms;
-			int iTermCount = terms.Length;
-			GOTermProperties[] properties = this.oParent.Properties;
+			int iTermCount = this.aTerms.Count;
 
 			for (int i = 0; i < iTermCount; i++)
 			{
@@ -249,12 +274,12 @@ namespace IRB.Revigo.Core
 
 				for (int j = 0; j < iTermCount; j++)
 				{
-					if (token.HasValue && token.Value.IsCancellationRequested)
+					if (token.IsCancellationRequested)
 					{
 						return;
 					}
 
-					double dValue = this.GetValue(i, j);
+					double dValue = this.GetSimilarity(i, j);
 					if (i != j && !double.IsNaN(dValue))
 					{
 						sum += dValue;
@@ -264,14 +289,14 @@ namespace IRB.Revigo.Core
 
 				if (count <= 1)
 				{
-					properties[i].Uniqueness = 1.0;
+					this.aTerms[i].Uniqueness = 1.0;
 				}
 				else
 				{
 					// this assumes the semantic similarity measure in the matrix ranges
 					// from 0 to 1, so that 1-x can be used to convert 'similarity' to
 					// 'distance'
-					properties[i].Uniqueness = Math.Pow(1.0 - (sum / (double)count), 2.0);
+					this.aTerms[i].Uniqueness = Math.Pow(1.0 - (sum / (double)count), 2.0);
 				}
 			}
 		}

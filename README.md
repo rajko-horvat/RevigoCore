@@ -1,5 +1,6 @@
 ﻿## Repository description
 <p>This is the main REVIGO Core library that implements the whole clustering algorithm.</p>
+<p>Since a lot of changes had to be made for .NET Core. Official release with binaries is planned for mid February 2023</p>
 
 ## How to compile and use this library
 <p>To compile from command line: 

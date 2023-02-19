@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using IRB.Collections.Generic;
 
-namespace IRB.Revigo.Databases
+namespace IRB.Revigo.Core.Databases
 {
 	/// <summary>
 	/// A class holding annotations for a species.
@@ -45,7 +45,7 @@ namespace IRB.Revigo.Databases
 		private BDictionary<int, double> oNormalizedAnnotations = new BDictionary<int, double>();
 		private double dSumOfNormalizedAnnotations = 0.0;
 
-		private GOTermWordCorpus oWordCorpus = new GOTermWordCorpus();
+		private GeneOntologyWordCorpus oWordCorpus = new GeneOntologyWordCorpus();
 
 		public SpeciesAnnotations()
 		{ }
@@ -63,7 +63,7 @@ namespace IRB.Revigo.Databases
 				this.dSumOfNormalizedAnnotations += this.oNormalizedAnnotations[i].Value;
 			}
 
-			this.oWordCorpus = new GOTermWordCorpus(this, go);
+			this.oWordCorpus = new GeneOntologyWordCorpus(this, go);
 		}
 		
 		public int TaxonID
@@ -130,7 +130,7 @@ namespace IRB.Revigo.Databases
 			}
 		}
 
-		public GOTermWordCorpus WordCorpus
+		public GeneOntologyWordCorpus WordCorpus
 		{
 			get
 			{
@@ -138,7 +138,7 @@ namespace IRB.Revigo.Databases
 			}
 		}
 
-		public int GetTermSize(int goId, GeneOntology myGo)
+		public int GetTermSize(int goId, GeneOntology ontology)
 		{
 			if (this.oAnnotations.ContainsKey(goId))
 			{
@@ -148,7 +148,7 @@ namespace IRB.Revigo.Databases
 			{
 				// look at sizes of all siblings, and average them to guess the
 				// frequency of the term
-				GOTerm curTerm = myGo.Terms.GetValueByKey(goId);
+				GeneOntologyTerm curTerm = ontology.Terms.GetValueByKey(goId);
 				BHashSet<int> siblings = curTerm.GetSiblings();
 				int numUsableSibs = 0;
 				int sumOfSizesOfUsableSibs = 0;
@@ -192,7 +192,7 @@ namespace IRB.Revigo.Databases
 
 				foreach (int parentID in parentIDs)
 				{
-					if (myGo.Terms.GetValueByKey(parentID).IsRootNode)
+					if (ontology.Terms.GetValueByKey(parentID).IsRootNode)
 						continue;
 
 					if (this.oAnnotations.ContainsKey(parentID))
@@ -216,7 +216,7 @@ namespace IRB.Revigo.Databases
 			}
 		}
 
-		public double GetTermFrequency(int goId, GeneOntology myGo)
+		public double GetTermFrequency(int goId, GeneOntology ontology)
 		{
 			if (this.oNormalizedAnnotations.ContainsKey(goId))
 			{
@@ -224,11 +224,11 @@ namespace IRB.Revigo.Databases
 			}
 			else
 			{
-				return CalculateTermFrequency(goId, myGo, new List<int>());
+				return CalculateTermFrequency(goId, ontology, new List<int>());
 			}
 		}
 
-		private double CalculateTermFrequency(int goId, GeneOntology myGo, List<int> missingTerms)
+		private double CalculateTermFrequency(int goId, GeneOntology ontology, List<int> missingTerms)
 		{
 			// look at frequencies of all siblings, and average them to guess the 
 			// frequency of the term
@@ -239,7 +239,7 @@ namespace IRB.Revigo.Databases
 				return this.dSumOfNormalizedAnnotations / this.oNormalizedAnnotations.Count;
 			}
 
-			GOTerm curTerm = myGo.Terms.GetValueByKey(goId);
+			GeneOntologyTerm curTerm = ontology.Terms.GetValueByKey(goId);
 			BHashSet<int> siblings = curTerm.GetSiblings();
 			int numUsableSibs = 0;
 			double sumOfFreqsOfUsableSibs = 0.0;
@@ -251,7 +251,7 @@ namespace IRB.Revigo.Databases
 				if (!this.oNormalizedAnnotations.ContainsKey(sibling) && !missingTerms.Contains(sibling))
 				{
 					missingTerms.Add(sibling);
-					CalculateTermFrequency(sibling, myGo, missingTerms);
+					CalculateTermFrequency(sibling, ontology, missingTerms);
 				}
 
 				if (this.oNormalizedAnnotations.ContainsKey(sibling) &&
@@ -279,7 +279,7 @@ namespace IRB.Revigo.Databases
 				if (!this.oNormalizedAnnotations.ContainsKey(childID) && !missingTerms.Contains(childID))
 				{
 					missingTerms.Add(childID);
-					CalculateTermFrequency(childID, myGo, missingTerms);
+					CalculateTermFrequency(childID, ontology, missingTerms);
 				}
 
 				if (this.oNormalizedAnnotations.ContainsKey(childID) &&
@@ -301,7 +301,7 @@ namespace IRB.Revigo.Databases
 
 			foreach (int parentID in parentIDs)
 			{
-				if (myGo.Terms.GetValueByKey(parentID).IsRootNode)
+				if (ontology.Terms.GetValueByKey(parentID).IsRootNode)
 					continue;
 
 				// Added by rhorvat at 5.3.2022. - For this to work properly we have to define Normalized annotations for all siblings and all children
@@ -309,7 +309,7 @@ namespace IRB.Revigo.Databases
 				if (!this.oNormalizedAnnotations.ContainsKey(parentID) && !missingTerms.Contains(parentID))
 				{
 					missingTerms.Add(parentID);
-					CalculateTermFrequency(parentID, myGo, missingTerms);
+					CalculateTermFrequency(parentID, ontology, missingTerms);
 				}
 
 				if (this.oNormalizedAnnotations.ContainsKey(parentID)

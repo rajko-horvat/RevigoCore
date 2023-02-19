@@ -7,7 +7,7 @@ using System.Xml.Serialization;
 using IRB.Collections.Generic;
 using System.Threading;
 
-namespace IRB.Revigo.Databases
+namespace IRB.Revigo.Core.Databases
 {
 	/// <summary>
 	/// A class holding a collection of annotations for all supported species.
@@ -39,21 +39,21 @@ namespace IRB.Revigo.Databases
 	/// 	ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	/// </summary>
 	[Serializable]
-	public class SpeciesAnnotationsList
+	public class SpeciesAnnotationList
 	{
 		private DateTime dtDate = new DateTime(0);
 		private string? sLink = null;
 		private List<SpeciesAnnotations> aItems = new List<SpeciesAnnotations>();
 
-		public SpeciesAnnotationsList()
+		public SpeciesAnnotationList()
 		{ }
 
-		public SpeciesAnnotationsList(ICollection<SpeciesAnnotations> collection)
+		public SpeciesAnnotationList(ICollection<SpeciesAnnotations> collection)
 		{
 			this.aItems = new List<SpeciesAnnotations>(collection);
 		}
 
-		public static SpeciesAnnotationsList FromGOA(string goaPath, string goPath, string ncbiPath, int[] taxonIDs)
+		public static SpeciesAnnotationList FromGOA(string goaPath, string goPath, string ncbiPath, int[] taxonIDs)
 		{
 			return FromGOA(goaPath, goPath, ncbiPath, taxonIDs, Math.Max(1, Environment.ProcessorCount));
 		}
@@ -74,9 +74,9 @@ namespace IRB.Revigo.Databases
 		/// <param name="ncbiPath">Path to the NCBI species database "names.dmp"</param>
 		/// <param name="taxonIDs">Array of taxon IDs of the organism to process</param>
 		/// <param name="cpuCount">CPU core count to be used. Be careful and don't exceed you physical CPU core count</param>
-		public static SpeciesAnnotationsList FromGOA(string goaPath, string goPath, string ncbiPath, int[] taxonIDs, int cpuCount)
+		public static SpeciesAnnotationList FromGOA(string goaPath, string goPath, string ncbiPath, int[] taxonIDs, int cpuCount)
 		{
-			SpeciesAnnotationsList result = new SpeciesAnnotationsList();
+			SpeciesAnnotationList result = new SpeciesAnnotationList();
 
 			// in how many batches we will distribute this work (physical CPU count)
 			// take care if you have turned HyperThreading on!
@@ -360,7 +360,7 @@ namespace IRB.Revigo.Databases
 
 				for (int j = 0; j < annotations.Count; j++)
 				{
-					GOTerm term = go.Terms.GetValueByKey(annotations[j].Key);
+					GeneOntologyTerm term = go.Terms.GetValueByKey(annotations[j].Key);
 					if (term.IsObsolete)
 					{
 						log.WriteLine("{0}\t{1}\t{2}", iSpecies, term.FormattedID, annotations[j].Value);
@@ -670,7 +670,7 @@ namespace IRB.Revigo.Databases
 					if (this.oOntology.Terms.ContainsKey(iGOID))
 					{
 						// translate term ID to current ID (alternate ID, replacement, obsolete...)
-						GOTerm term = this.oOntology.Terms.GetValueByKey(iGOID);
+						GeneOntologyTerm term = this.oOntology.Terms.GetValueByKey(iGOID);
 
 						AnnotateTerm(0, term.ID);
 
@@ -943,7 +943,7 @@ namespace IRB.Revigo.Databases
 		/// <param name="taxonID">A NCBI Taxonomy ID for the organism to load; pass 0 for the
 		/// entire Uniprot database.</param>
 		/// <returns>A deserialized GoTermSizes object.</returns>
-		public static SpeciesAnnotationsList Deserialize(string path, bool gzipped)
+		public static SpeciesAnnotationList Deserialize(string path, bool gzipped)
 		{
 			return Deserialize(path + (gzipped ? ".gz" : ""));
 		}
@@ -954,7 +954,7 @@ namespace IRB.Revigo.Databases
 		/// </summary>
 		/// <param name="filePath">A full path to a object xml file.</param>
 		/// <returns>A deserialized GoTermSizes object.</returns>
-		public static SpeciesAnnotationsList Deserialize(string filePath)
+		public static SpeciesAnnotationList Deserialize(string filePath)
 		{
 			StreamReader reader;
 			if (filePath.EndsWith(".gz"))
@@ -966,7 +966,7 @@ namespace IRB.Revigo.Databases
 				reader = new StreamReader(new BufferedStream(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read), 65536));
 			}
 
-			SpeciesAnnotationsList oAnnotations = Deserialize(reader);
+			SpeciesAnnotationList oAnnotations = Deserialize(reader);
 
 			reader.Close();
 
@@ -978,13 +978,13 @@ namespace IRB.Revigo.Databases
 		/// </summary>
 		/// <param name="reader">A stream to read the object from.</param>
 		/// <returns>A deserialized GoTermSizes object.</returns>
-		public static SpeciesAnnotationsList Deserialize(StreamReader reader)
+		public static SpeciesAnnotationList Deserialize(StreamReader reader)
 		{
-			XmlSerializer ser = new XmlSerializer(typeof(SpeciesAnnotationsList));
+			XmlSerializer ser = new XmlSerializer(typeof(SpeciesAnnotationList));
 			object? obj = ser.Deserialize(reader);
 			if (obj == null)
-				throw new Exception("Can't deserialize SpeciesAnnotationsList object");
-			SpeciesAnnotationsList newObj = (SpeciesAnnotationsList)obj;
+				throw new Exception("Can't deserialize SpeciesAnnotationList object");
+			SpeciesAnnotationList newObj = (SpeciesAnnotationList)obj;
 			newObj.SortByName();
 
 			return newObj;
@@ -1030,7 +1030,7 @@ namespace IRB.Revigo.Databases
 		/// <param name="writer">A stream to serialize the object to.</param>
 		public void Serialize(StreamWriter writer)
 		{
-			XmlSerializer ser = new XmlSerializer(typeof(SpeciesAnnotationsList));
+			XmlSerializer ser = new XmlSerializer(typeof(SpeciesAnnotationList));
 			ser.Serialize(writer, this);
 		}
 	}

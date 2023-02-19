@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace IRB.Revigo.Worker
+﻿namespace IRB.Revigo.Core
 {
 	/// <summary>
 	/// 
 	/// Authors:
+	/// 	Fran Supek (fsupek at irb.hr)
 	/// 	Rajko Horvat (rhorvat at irb.hr)
 	/// 
 	/// License:
@@ -29,37 +26,11 @@ namespace IRB.Revigo.Worker
 	/// 	DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
 	/// 	ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	/// </summary>
-	public class ProgressEventArgs : EventArgs
+	public enum SemanticSimilarityTypeEnum
 	{
-		private double dProgress;
-		private string? sDescription = null;
-
-		public ProgressEventArgs(double progress)
-			: this(progress, null)
-		{ }
-
-		public ProgressEventArgs(double progress, string? description)
-		{
-			this.dProgress = progress;
-			this.sDescription = description;
-		}
-
-		public double Progress
-		{
-			get
-			{
-				return this.dProgress;
-			}
-		}
-
-		public string? Description
-		{
-			get
-			{
-				return this.sDescription;
-			}
-		}
+		SIMREL,
+		LIN,
+		RESNIK,
+		JIANG
 	}
-
-	public delegate void ProgressEventHandler(object sender, ProgressEventArgs e);
 }

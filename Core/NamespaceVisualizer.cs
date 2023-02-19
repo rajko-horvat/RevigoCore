@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using IRB.Collections.Generic;
-using IRB.Revigo.Worker;
-using IRB.Revigo.Databases;
+using IRB.Revigo.Core.Databases;
+using IRB.Revigo.Core.Worker;
 
 namespace IRB.Revigo.Core
 {
@@ -55,13 +54,13 @@ namespace IRB.Revigo.Core
 	/// 	DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
 	/// 	ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	/// </summary>
-	public class TermListVisualizer
+	public class NamespaceVisualizer
 	{
-		private RevigoWorker oParent;
-		private GONamespaceEnum eNamespace;
+		private static NamespaceVisualizer oEmptyVisualizer = new NamespaceVisualizer();
 
-		private GOTerm[] aTerms;
-		private GOTermProperties[] aProperties;
+		private RevigoWorker? oParent = null;
+		private GeneOntologyNamespaceEnum eNamespace = GeneOntologyNamespaceEnum.None;
+		private RevigoTermCollection aTerms = new RevigoTermCollection();
 
 		// Two values (x and y) of the supplied property are considered equal
 		// if abs(x-y)/((x+y)/2) is less than the confidenceInterval.
@@ -77,7 +76,7 @@ namespace IRB.Revigo.Core
 		public static int MaxAllowedGOListSize = 2000;
 
 		// similarity matrix
-		private TermSimilarityMatrix? oMatrix = null;
+		private SemanticSimilarityMatrix? oMatrix = null;
 
 		// results
 		private bool bMDSError = false;
@@ -88,13 +87,17 @@ namespace IRB.Revigo.Core
 		private double dProgressSlice = 0.0;
 
 		// events
-		private ProgressEventHandler OnProgress;
+		private ProgressEventHandler OnProgress = delegate { };
+
+		protected NamespaceVisualizer()
+		{
+		}
 
 		/// <summary>
 		/// Requires that a List of GOTerms is provided, as
 		/// well as the GeneOntology instance they were taken from. <p>
 		///
-		/// The TermListVisualizer will use the provided GoTermSizesObject to
+		/// The NamespaceVisualizer will use the provided GoTermSizesObject to
 		/// calculate semantic distances. <p>
 		/// </summary>
 		/// <param name="termList">A list of selected GO terms.</param>
@@ -104,24 +107,16 @@ namespace IRB.Revigo.Core
 		/// header in output arff files, and in reporting of errors. Optional.</param>
 		/// <param name="orgsInTotal">I don't remember what this was for; it isn't used for
 		/// any calculations, it is just output as-is to Weka Instances.</param>
-		public TermListVisualizer(RevigoWorker parent, GONamespaceEnum goNamespace,
-			GOTerm[] terms, BDictionary<int, GOTermProperties> properties, CancellationToken? token, ProgressEventHandler progressHandler)
+		public NamespaceVisualizer(RevigoWorker parent, GeneOntologyNamespaceEnum geneOntologyNamespace, ICollection<RevigoTerm> terms,
+			CancellationTokenSource token, ProgressEventHandler progressHandler)
 		{
 			this.oParent = parent;
-			this.eNamespace = goNamespace;
+			this.eNamespace = geneOntologyNamespace;
 			this.OnProgress = progressHandler;
-			this.aTerms = terms;
-			Array.Sort(this.aTerms);
+			this.aTerms = new RevigoTermCollection(terms);
+			this.aTerms.Sort();
 
-			// properties array coresponds to term array
-			this.aProperties = new GOTermProperties[this.aTerms.Length];
-
-			for (int i = 0; i < this.aTerms.Length; i++)
-			{
-				this.aProperties[i] = properties.GetValueByKey(this.aTerms[i].ID);
-			}
-
-			if (this.aTerms.Length > 0)
+			if (this.aTerms.Count > 0)
 			{
 				ConstructMatrix(token);
 				MakeOntologram(token);
@@ -129,7 +124,12 @@ namespace IRB.Revigo.Core
 			}
 		}
 
-		public RevigoWorker Parent
+		public static NamespaceVisualizer Empty
+		{
+			get { return oEmptyVisualizer; }
+		}
+
+		public RevigoWorker? Parent
 		{
 			get
 			{
@@ -137,7 +137,12 @@ namespace IRB.Revigo.Core
 			}
 		}
 
-		public GONamespaceEnum Namespace
+		public bool IsEmpty
+		{
+			get { return (this.oParent == null || this.aTerms.Count == 0 || this.oMatrix == null) ? true : false; }
+		}
+
+		public GeneOntologyNamespaceEnum Namespace
 		{
 			get
 			{
@@ -145,7 +150,7 @@ namespace IRB.Revigo.Core
 			}
 		}
 
-		public GOTerm[] Terms
+		public RevigoTermCollection Terms
 		{
 			get
 			{
@@ -153,16 +158,8 @@ namespace IRB.Revigo.Core
 			}
 		}
 
-		public GOTermProperties[] Properties
-		{
-			get
-			{
-				return this.aProperties;
-			}
-		}
-
 		// results
-		public TermSimilarityMatrix? Matrix
+		public SemanticSimilarityMatrix? Matrix
 		{
 			get
 			{
@@ -186,14 +183,20 @@ namespace IRB.Revigo.Core
 			}
 		}
 
-		private void ConstructMatrix(CancellationToken? token)
+		private void ConstructMatrix(CancellationTokenSource token)
 		{
+			if (this.oParent == null)
+				return;
+
 			this.dProgressPos = 0.0;
 			this.dProgressSlice = 20.0;
 
 			if (this.OnProgress != null)
 				this.OnProgress(this, new ProgressEventArgs(0.0, "Constructing similarity matrix"));
-			this.oMatrix = new TermSimilarityMatrix(this, token, myMatrix_OnProgress);
+
+			RevigoWorker oWorker = this.oParent;
+			this.oMatrix = new SemanticSimilarityMatrix(oWorker.SemanticSimilarity, oWorker.Ontology, oWorker.Annotations, this.aTerms,
+				token, myMatrix_OnProgress);
 		}
 
 		void myMatrix_OnProgress(object sender, ProgressEventArgs e)
@@ -206,16 +209,19 @@ namespace IRB.Revigo.Core
 		/// <summary>
 		/// Makes a ontologram by performing these steps:
 		/// <ul>
-		///  <li> computes 'uniqueness' of each GO term (stored into GOTerm properties)</li>
-		///  <li> computes 'dispensability' of each GO term (stored into GOTerm properties)</li>
+		///  <li> computes 'uniqueness' of each GO term (stored into GeneOntologyTerm properties)</li>
+		///  <li> computes 'dispensability' of each GO term (stored into GeneOntologyTerm properties)</li>
 		///  <li> removes all dispensable GO Terms from similarity matrix (you can skip this step
 		///       by passing 1.0 as dispensabilityCutoff)</li>
 		///  <li> performs MDS on the matrix</li>
 		/// </ul>
 		/// </summary>
 		/// <returns>True if MDS error was encountered</returns>
-		private void MakeOntologram(CancellationToken? token)
+		private void MakeOntologram(CancellationTokenSource token)
 		{
+			if (this.oParent == null)
+				return;
+
 			RandomMT19937 oRnd = new RandomMT19937(18012021);
 			GeneOntology? oOntology = this.oParent.Ontology;
 			SpeciesAnnotations? oAnnotations = this.oParent.Annotations;
@@ -224,7 +230,7 @@ namespace IRB.Revigo.Core
 				return;
 
 			if (this.oMatrix == null)
-				throw new Exception("The matrix for the TermListVisualizer is not contructed");
+				throw new Exception("The matrix for the NamespaceVisualizer is not contructed");
 
 			// Trim huge term lists
 			/*this.dProgressPos = 0.0;
@@ -262,12 +268,12 @@ namespace IRB.Revigo.Core
 		/**
 		 * !!! This function is not supported anymore !!!
 		 * 
-		 * Takes a list of GO terms from the current TermListVisualizer object,
+		 * Takes a list of GO terms from the current NamespaceVisualizer object,
 		 * checks if the list is 'huge' (i.e. above a certain threshold) and if it 
 		 * is, makes sure that it fits within that size by throwing out GO terms that:
 		 * 
 		 * (a) have 'bad' p-values/enrichments/whatever - note: the GoTermProperties
-		 *     must have been transformed prior to invoking TermListVisualizer so that
+		 *     must have been transformed prior to invoking NamespaceVisualizer so that
 		 *     larger is always better
 		 * 
 		 * OR, if the values above were not supplied by the user
@@ -276,7 +282,7 @@ namespace IRB.Revigo.Core
 		 */
 		private void TrimHugeTermLists()
 		{
-			if (this.aTerms.Length <= MaxAllowedGOListSize)
+			if (this.oParent == null || this.aTerms.Count <= MaxAllowedGOListSize)
 				return;
 
 			GeneOntology? oOntology = this.oParent.Ontology;
@@ -287,9 +293,9 @@ namespace IRB.Revigo.Core
 
 			bool allTermsHaveProperty = true;
 			List<double> propValues = new List<double>();
-			for (int i = 0; i < this.aTerms.Length; i++)
+			for (int i = 0; i < this.aTerms.Count; i++)
 			{
-				double dTransformedValue = this.aProperties[i].TransformedValue;
+				double dTransformedValue = this.aTerms[i].TransformedValue;
 				if (!double.IsNaN(dTransformedValue))
 				{
 					propValues.Add(dTransformedValue);
@@ -305,31 +311,31 @@ namespace IRB.Revigo.Core
 			{
 				// resort to using Go Term generality instead
 				propValues.Clear();
-				foreach (GOTerm curTerm in this.aTerms)
+				foreach (RevigoTerm term in this.aTerms)
 				{
-					propValues.Add(-oAnnotations.GetTermFrequency(curTerm.ID, oOntology));
+					propValues.Add(-oAnnotations.GetTermFrequency(term.GOTerm.ID, oOntology));
 				}
 			}
 
 			propValues.Sort();
 
 			// keep maxAllowedGoListSize biggest values
-			double threshold = propValues[this.aTerms.Length - MaxAllowedGOListSize];
+			double threshold = propValues[this.aTerms.Count - MaxAllowedGOListSize];
 
-			for (int i = 0; i < this.aTerms.Length; i++)
+			for (int i = 0; i < this.aTerms.Count; i++)
 			{
-				GOTerm curTerm = this.aTerms[i];
+				RevigoTerm term = this.aTerms[i];
 				double valToTest;
 
 				if (allTermsHaveProperty)
 				{
 					// remove 'undesirable' GO categories, e.g. with large p-values
-					valToTest = this.aProperties[i].TransformedValue;
+					valToTest = term.TransformedValue;
 				}
 				else
 				{
 					// remove general (i.e. not highly informative) GO categories
-					valToTest = -oAnnotations.GetTermFrequency(curTerm.ID, oOntology);
+					valToTest = -oAnnotations.GetTermFrequency(term.GOTerm.ID, oOntology);
 				}
 				if (valToTest < threshold)
 				{
@@ -350,36 +356,30 @@ namespace IRB.Revigo.Core
 		/// at random).
 		/// </summary>
 		/// <param name="rnd"></param>
-		private void BuildDispensableTermList(RandomMT19937 rnd, CancellationToken? token)
+		private void BuildDispensableTermList(RandomMT19937 rnd, CancellationTokenSource token)
 		{
-			if (this.oMatrix == null)
+			if (this.oParent == null || this.oMatrix == null)
 				return;
 
-			GeneOntology? oOntology = this.oParent.Ontology;
-			SpeciesAnnotations? oAnnotations = this.oParent.Annotations;
-
-			if (oAnnotations == null || oOntology == null)
-				return;
+			GeneOntology oOntology = this.oParent.Ontology;
+			SpeciesAnnotations oAnnotations = this.oParent.Annotations;
 
 			bool keepGreater = true;
 			bool absLogProp = false;
-
-			// this is to keep the original matrix from getting destroyed
-			//TermSimilarityMatrix oSimilarityMatrix = this.oMatrix.Clone();
+			int iTermCount = this.aTerms.Count;
 
 			// set "dispensability" of all terms to 0, because otherwise one term
 			// could be left without a dispensability value
-			for (int i = 0; i < this.aTerms.Length; i++)
+			for (int i = 0; i < iTermCount; i++)
 			{
-				GOTermProperties property = this.aProperties[i];
-				property.Dispensability = 0.0;
-				property.DispensedBy = -1;
+				RevigoTerm term = this.aTerms[i];
+				term.Dispensability = 0.0;
+				term.DispensedByID = -1;
 
-				if (token != null && token.Value.IsCancellationRequested)
+				if (token.IsCancellationRequested)
 					return;
 			}
 
-			int iTermCount = this.aTerms.Length;
 			double dSlice = this.dProgressSlice / 2.0;
 			double dProgressStep = dSlice / (double)iTermCount;
 			int iPairCount = 0;
@@ -387,16 +387,16 @@ namespace IRB.Revigo.Core
 			BDictionary<double, List<int[]>> oTermPairsGroupedBySimilarity = new BDictionary<double, List<int[]>>();
 			for (int i = 0; i < iTermCount; i++)
 			{
-				double propX = this.aProperties[i].TransformedValue;
+				double propX = this.aTerms[i].TransformedValue;
 
-				if (token != null && token.Value.IsCancellationRequested)
+				if (token.IsCancellationRequested)
 					return;
 
 				// we are symmetrical
 				for (int j = i + 1; j < iTermCount; j++)
 				{
-					double propY = this.aProperties[j].TransformedValue;
-					double dSimilarity = Math.Round(oMatrix.GetValue(i, j), 8);
+					double propY = this.aTerms[j].TransformedValue;
+					double dSimilarity = Math.Round(oMatrix.GetSimilarity(i, j), 8);
 
 					if ((double.IsNaN(propX) || double.IsNaN(propY) || Math.Sign(propX) == Math.Sign(propY)) && dSimilarity > -1.0)
 					{
@@ -432,14 +432,14 @@ namespace IRB.Revigo.Core
 
 				while (aPairs.Count > 0)
 				{
-					if (token != null && token.Value.IsCancellationRequested)
+					if (token.IsCancellationRequested)
 						return;
 
 					int iSelected = (aPairs.Count > 1) ? rnd.Next(aPairs.Count) : 0;
 					int iXIndex = aPairs[iSelected][0];
 					int iYIndex = aPairs[iSelected][1];
-					int iXID = this.aTerms[iXIndex].ID;
-					int iYID = this.aTerms[iYIndex].ID;
+					int iXID = this.aTerms[iXIndex].GOTerm.ID;
+					int iYID = this.aTerms[iYIndex].GOTerm.ID;
 
 					if (oRemovedTerms.Contains(iXID) || oRemovedTerms.Contains(iYID))
 					{
@@ -449,15 +449,15 @@ namespace IRB.Revigo.Core
 					{
 						// now, either XID or YID have to be "removed" (i.e. marked as having high dispensability)
 						int iRemoveID;
-						GOTermProperties oPropertiesX = this.aProperties[iXIndex];
-						GOTermProperties oPropertiesY = this.aProperties[iYIndex];
+						RevigoTerm term1 = this.aTerms[iXIndex];
+						RevigoTerm term2 = this.aTerms[iYIndex];
 
 						// decideWhichToRemove block
 
 						// first condition - if one of the GO categories is "pinned" by the
 						// user, it automatically wins the contest
-						bool bXPinned = oPropertiesX.Pinned;
-						bool bYPinned = oPropertiesY.Pinned;
+						bool bXPinned = term1.Pinned;
+						bool bYPinned = term2.Pinned;
 						if (bXPinned && !bYPinned)
 						{
 							iRemoveID = iYID;
@@ -471,8 +471,8 @@ namespace IRB.Revigo.Core
 
 						// second condition - if one GO category is 'very general' and the other
 						// GO category is not, the 'very general' category automatically loses
-						double dFreqX = oPropertiesX.AnnotationFrequency;
-						double dFreqY = oPropertiesY.AnnotationFrequency;
+						double dFreqX = term1.AnnotationFrequency;
+						double dFreqY = term2.AnnotationFrequency;
 						if (!double.IsNaN(dFreqX) && !double.IsNaN(dFreqY))
 						{
 							if (dFreqX > GeneGroupGeneralityThreshold &&
@@ -490,13 +490,13 @@ namespace IRB.Revigo.Core
 						}
 
 						// now, check the properties to see which term we like best
-						double dTValueX = oPropertiesX.TransformedValue;
-						double dTValueY = oPropertiesY.TransformedValue;
+						double dTValueX = term1.TransformedValue;
+						double dTValueY = term2.TransformedValue;
 
 						if (double.IsNaN(dTValueX) || double.IsNaN(dTValueY))
 						{
-							dTValueX = oPropertiesX.Uniqueness;
-							dTValueY = oPropertiesY.Uniqueness;
+							dTValueX = term1.Uniqueness;
+							dTValueY = term2.Uniqueness;
 						}
 
 						if (double.IsNaN(dTValueX) || double.IsNaN(dTValueY))
@@ -538,12 +538,12 @@ namespace IRB.Revigo.Core
 						{
 							// they are equal.. here the fun begins :)
 							// check if the two are linked by a parent-child relationship
-							//BHashSet<GOTerm> parentsOfX = oOntology[iXSelectedID].getAllParents();
-							//BHashSet<GOTerm> parentsOfY = oOntology[iYSelectedID].getAllParents();
+							//BHashSet<GeneOntologyTerm> parentsOfX = oOntology[iXSelectedID].getAllParents();
+							//BHashSet<GeneOntologyTerm> parentsOfY = oOntology[iYSelectedID].getAllParents();
 
 							// also get sizes of X and Y, we'll need this to decide which to keep
-							double sizeOfX = oPropertiesX.AnnotationSize;
-							double sizeOfY = oPropertiesY.AnnotationSize;
+							double sizeOfX = term1.AnnotationSize;
+							double sizeOfY = term2.AnnotationSize;
 
 							// parentsOfX.Contains(oOntology[iYSelectedID])
 							if (oOntology.Terms.GetValueByKey(iXID).IsChildOf(iYID))
@@ -589,9 +589,9 @@ namespace IRB.Revigo.Core
 					// end block "decideWhichToRemove:"
 					decideWhichToRemove:
 						int iRemoveIndex = (iRemoveID == iXID) ? iXIndex : iYIndex;
-						GOTermProperties oRemoveProperties = (iRemoveID == iXID) ? oPropertiesX : oPropertiesY;
-						oRemoveProperties.Dispensability = dSimilarity;
-						oRemoveProperties.DispensedBy = (iRemoveID == iXID) ? iYID : iXID;
+						RevigoTerm removedTerm = (iRemoveID == iXID) ? term1 : term2;
+						removedTerm.Dispensability = dSimilarity;
+						removedTerm.DispensedByID = (iRemoveID == iXID) ? iYID : iXID;
 
 						oRemovedTerms.Add(iRemoveID);
 						aPairs.RemoveAt(iSelected);
@@ -605,26 +605,25 @@ namespace IRB.Revigo.Core
 			}
 		}
 
-		private bool DoMDS(CancellationToken? token)
+		private bool DoMDS(CancellationTokenSource token)
 		{
-			if (this.oMatrix == null)
+			if (this.oParent == null || this.oMatrix == null)
 				return false;
 
 			double dProgress;
 
 			double dCutoff = this.oParent.CutOff;
 			List<int> aMDSTerms = new List<int>();
-			int iTermsCount = this.aTerms.Length;
+			int iTermsCount = this.aTerms.Count;
 
 			for (int i = 0; i < iTermsCount; i++)
 			{
-				if (token != null && token.Value.IsCancellationRequested)
+				if (token.IsCancellationRequested)
 					return false;
 
-				GOTerm term = this.aTerms[i];
-				double dPropertyValue = this.aProperties[i].Dispensability;
+				RevigoTerm term = this.aTerms[i];
 
-				if (double.IsNaN(dPropertyValue) || dPropertyValue <= dCutoff)
+				if (double.IsNaN(term.Dispensability) || term.Dispensability <= dCutoff)
 				{
 					aMDSTerms.Add(i);
 				}
@@ -639,9 +638,9 @@ namespace IRB.Revigo.Core
 
 				for (int j = i + 1; j < iTermsCount; j++)
 				{
-					double value = this.oMatrix.GetValue(aMDSTerms[i], aMDSTerms[j]);
+					double value = this.oMatrix.GetSimilarity(aMDSTerms[i], aMDSTerms[j]);
 
-					if (token != null && token.Value.IsCancellationRequested)
+					if (token.IsCancellationRequested)
 						return false;
 
 					// no NaN in matrix for MDS otherwise it will break! We can safely assume no similarity between these terms
@@ -675,7 +674,7 @@ namespace IRB.Revigo.Core
 			{
 				double[,] mdsResult = MDS.MDS.StressMinimization(oMatrixArray, iMDSAxes, 0, 5, 10000); // really try to converge, iterate for 10 seconds
 
-				if (token != null && token.Value.IsCancellationRequested)
+				if (token.IsCancellationRequested)
 					return false;
 
 				dProgress = this.dProgressPos + 5.0;
@@ -686,24 +685,23 @@ namespace IRB.Revigo.Core
 				// for the first PCs, add new properties to the GO Terms with their values.
 				for (int i = 0; i < aMDSTerms.Count; i++)
 				{
-					GOTerm curTerm = this.aTerms[aMDSTerms[i]];  // order of terms in TermList should correspond to order of instances
-					GOTermProperties oProperties = this.aProperties[aMDSTerms[i]];
-					oProperties.PC.Clear();
+					RevigoTerm term = this.aTerms[aMDSTerms[i]];  // order of terms in TermList should correspond to order of instances
+					term.PC.Clear();
 
 					for (int j = 0; j < iMDSAxes; j++)
 					{
-						if (token != null && token.Value.IsCancellationRequested)
+						if (token.IsCancellationRequested)
 							return false;
 
 						if (j < iAxes)
 						{
 							// PC is available (generally, it should be, except for very small distance matrices)
-							oProperties.PC.Add(mdsResult[j, i]);
+							term.PC.Add(mdsResult[j, i]);
 						}
 						else
 						{
 							// PC is not available (the distance matrix was very small)
-							oProperties.PC.Add(0.0);
+							term.PC.Add(0.0);
 						}
 					}
 				}
@@ -723,24 +721,23 @@ namespace IRB.Revigo.Core
 				// for the first PCs, add new properties to the GO Terms with their values.
 				for (int i = 0; i < aMDSTerms.Count; i++)
 				{
-					GOTerm curTerm = this.aTerms[aMDSTerms[i]];  // order of terms in TermList should correspond to order of instances
-					GOTermProperties oProperties = this.aProperties[aMDSTerms[i]];
-					oProperties.PC.Clear();
+					RevigoTerm term = this.aTerms[aMDSTerms[i]];  // order of terms in TermList should correspond to order of instances
+					term.PC.Clear();
 
 					for (int j = 0; j < iMDSAxes; j++)
 					{
-						if (token != null && token.Value.IsCancellationRequested)
+						if (token.IsCancellationRequested)
 							return false;
 
 						if (j < iAxes)
 						{
 							// PC is available (generally, it should be, except for very small distance matrices)
-							oProperties.PC.Add(oMatrixArray[i, j]);
+							term.PC.Add(oMatrixArray[i, j]);
 						}
 						else
 						{
 							// PC is not available (the distance matrix was very small)
-							oProperties.PC.Add(0.0);
+							term.PC.Add(0.0);
 						}
 					}
 				}
@@ -754,7 +751,7 @@ namespace IRB.Revigo.Core
 			{
 				double[,] mdsResult = MDS.MDS.StressMinimization(oMatrixArray, iMDSAxes, 0, 5, 10000); // really try to converge, iterate for 10 seconds
 
-				if (token != null && token.Value.IsCancellationRequested)
+				if (token.IsCancellationRequested)
 					return false;
 
 				dProgress = this.dProgressPos + 9.0;
@@ -765,24 +762,23 @@ namespace IRB.Revigo.Core
 				// for the first PCs, add new properties to the GO Terms with their values.
 				for (int i = 0; i < aMDSTerms.Count; i++)
 				{
-					GOTerm curTerm = this.aTerms[aMDSTerms[i]];  // order of terms in TermList should correspond to order of instances
-					GOTermProperties oProperties = this.aProperties[aMDSTerms[i]];
-					oProperties.PC3.Clear();
+					RevigoTerm term = this.aTerms[aMDSTerms[i]];  // order of terms in TermList should correspond to order of instances
+					term.PC3.Clear();
 
 					for (int j = 0; j < iMDSAxes; j++)
 					{
-						if (token != null && token.Value.IsCancellationRequested)
+						if (token.IsCancellationRequested)
 							return false;
 
 						if (j < iAxes)
 						{
 							// PC is available (generally, it should be, except for very small distance matrices)
-							oProperties.PC3.Add(mdsResult[j, i]);
+							term.PC3.Add(mdsResult[j, i]);
 						}
 						else
 						{
 							// PC is not available (the distance matrix was very small)
-							oProperties.PC3.Add(0.0);
+							term.PC3.Add(0.0);
 						}
 					}
 				}
@@ -802,24 +798,23 @@ namespace IRB.Revigo.Core
 				// for the first PCs, add new properties to the GO Terms with their values.
 				for (int i = 0; i < aMDSTerms.Count; i++)
 				{
-					GOTerm curTerm = this.aTerms[aMDSTerms[i]];  // order of terms in TermList should correspond to order of instances
-					GOTermProperties oProperties = this.aProperties[aMDSTerms[i]];
-					oProperties.PC3.Clear();
+					RevigoTerm term = this.aTerms[aMDSTerms[i]];  // order of terms in TermList should correspond to order of instances
+					term.PC3.Clear();
 
 					for (int j = 0; j < iMDSAxes; j++)
 					{
-						if (token != null && token.Value.IsCancellationRequested)
+						if (token.IsCancellationRequested)
 							return false;
 
 						if (j < iAxes)
 						{
 							// PC is available (generally, it should be, except for very small distance matrices)
-							oProperties.PC3.Add(oMatrixArray[i, j]);
+							term.PC3.Add(oMatrixArray[i, j]);
 						}
 						else
 						{
 							// PC is not available (the distance matrix was very small)
-							oProperties.PC3.Add(0.0);
+							term.PC3.Add(0.0);
 						}
 					}
 				}
@@ -832,16 +827,19 @@ namespace IRB.Revigo.Core
 			return bError;
 		}
 
-		private void MakeSimpleThresholdOntolograph(double similarityThreshold, CancellationToken? token)
+		private void MakeSimpleThresholdOntolograph(double similarityThreshold, CancellationTokenSource token)
 		{
-			OntoloGraph result = new OntoloGraph();
-			GeneOntology? oOntology = this.oParent.Ontology;
-			SpeciesAnnotations? oAnnotations = this.oParent.Annotations;
-			BHashSet<GOTerm> outerTermsProcessed = new BHashSet<GOTerm>();
-			BHashSet<int> termIdsWithConnections = new BHashSet<int>();
-			int iTermCount = this.aTerms.Length;
+			if (this.oParent == null)
+				return;
 
-			if (oAnnotations == null || iTermCount == 0)
+			OntoloGraph result = new OntoloGraph();
+			GeneOntology oOntology = this.oParent.Ontology;
+			SpeciesAnnotations oAnnotations = this.oParent.Annotations;
+			BHashSet<int> outerTermsProcessed = new BHashSet<int>();
+			BHashSet<int> termIdsWithConnections = new BHashSet<int>();
+			int iTermCount = this.aTerms.Count;
+
+			if (iTermCount == 0)
 				this.oOntoloGraph = null; // empty if no input data
 
 			double dProgressOld = this.dProgressPos;
@@ -849,7 +847,7 @@ namespace IRB.Revigo.Core
 			double dProgressStep = this.dProgressSlice / (double)iTermCount;
 
 			if (this.oMatrix == null)
-				throw new Exception("The matrix for the TermListVisualizer is not contructed");
+				throw new Exception("The matrix for the NamespaceVisualizer is not contructed");
 
 
 			// this is all to find the threshold for the terms we export to graph
@@ -859,36 +857,36 @@ namespace IRB.Revigo.Core
 
 			for (int i = 0; i < iTermCount; i++)
 			{
-				GOTerm outerGoTerm = this.aTerms[i];
-				int outerGoId = outerGoTerm.ID;
-				outerTermsProcessed.Add(outerGoTerm);
+				RevigoTerm outerGoTerm = this.aTerms[i];
+				int outerGoId = outerGoTerm.GOTerm.ID;
+				outerTermsProcessed.Add(outerGoId);
 
 				for (int j = 0; j < iTermCount; j++)
 				{
-					GOTerm innerGoTerm = this.aTerms[j];
-					int innerGoId = innerGoTerm.ID;
+					RevigoTerm innerGoTerm = this.aTerms[j];
+					int innerGoId = innerGoTerm.GOTerm.ID;
 
-					if (token != null && token.Value.IsCancellationRequested)
+					if (token.IsCancellationRequested)
 						return;
 
 					// skip connections to self, and two-way connections
-					if (innerGoId == outerGoId || outerTermsProcessed.Contains(innerGoTerm))
+					if (innerGoId == outerGoId || outerTermsProcessed.Contains(innerGoId))
 						continue;
 
-					if (!this.aProperties[i].Pinned)
+					if (!outerGoTerm.Pinned)
 					{
-						double dDispensability = this.aProperties[i].Dispensability;
+						double dDispensability = outerGoTerm.Dispensability;
 						if (!double.IsNaN(dDispensability) && dDispensability > this.oParent.CutOff)
 							continue;
 					}
-					if (!this.aProperties[j].Pinned)
+					if (!innerGoTerm.Pinned)
 					{
-						double dDispensability = this.aProperties[j].Dispensability;
+						double dDispensability = innerGoTerm.Dispensability;
 						if (!double.IsNaN(dDispensability) && dDispensability > this.oParent.CutOff)
 							continue;
 					}
 
-					double simil = this.oMatrix.GetValue(i, j);
+					double simil = this.oMatrix.GetSimilarity(i, j);
 					aSimilarities[iSimilarityCount++] = simil;
 				}
 
@@ -921,38 +919,38 @@ namespace IRB.Revigo.Core
 
 			for (int i = 0; i < iTermCount; i++)
 			{
-				GOTerm outerGoTerm = this.aTerms[i];
-				int outerGoId = outerGoTerm.ID;
+				RevigoTerm outerGoTerm = this.aTerms[i];
+				int outerGoId = outerGoTerm.GOTerm.ID;
 
-				outerTermsProcessed.Add(outerGoTerm);
+				outerTermsProcessed.Add(outerGoId);
 
 				for (int j = 0; j < iTermCount; j++)
 				{
-					if (token != null && token.Value.IsCancellationRequested)
+					if (token.IsCancellationRequested)
 						return;
 
-					GOTerm innerGoTerm = this.aTerms[j];
-					int innerGoId = innerGoTerm.ID;
+					RevigoTerm innerGoTerm = this.aTerms[j];
+					int innerGoId = innerGoTerm.GOTerm.ID;
 
 					// skip connections to self, and two-way connections
-					if (innerGoId == outerGoId || outerTermsProcessed.Contains(innerGoTerm))
+					if (innerGoId == outerGoId || outerTermsProcessed.Contains(innerGoId))
 						continue;
 
-					if (!this.aProperties[i].Pinned)
+					if (!outerGoTerm.Pinned)
 					{
-						double dDispensability = this.aProperties[i].Dispensability;
+						double dDispensability = outerGoTerm.Dispensability;
 						if (!double.IsNaN(dDispensability) && dDispensability > this.oParent.CutOff)
 							continue;
 					}
 
-					if (!this.aProperties[j].Pinned)
+					if (!innerGoTerm.Pinned)
 					{
-						double dDispensability = this.aProperties[j].Dispensability;
+						double dDispensability = innerGoTerm.Dispensability;
 						if (!double.IsNaN(dDispensability) && dDispensability > this.oParent.CutOff)
 							continue;
 					}
 
-					double simil = this.oMatrix.GetValue(i, j);
+					double simil = this.oMatrix.GetSimilarity(i, j);
 
 					if (simil >= threshold)
 					{
@@ -986,72 +984,71 @@ namespace IRB.Revigo.Core
 
 			for (int i = 0; i < iTermCount; i++)
 			{
-				GOTerm curGoTerm = this.aTerms[i];
-				GOTermProperties oProperties = this.aProperties[i];
+				RevigoTerm curGoTerm = this.aTerms[i];
 
-				if (token != null && token.Value.IsCancellationRequested)
+				if (token.IsCancellationRequested)
 					return;
 
-				if (!oProperties.Pinned)
+				if (!curGoTerm.Pinned)
 				{
-					double dDispensability = oProperties.Dispensability;
+					double dDispensability = curGoTerm.Dispensability;
 					if (!double.IsNaN(dDispensability) && dDispensability > this.oParent.CutOff)
 						continue;
 				}
 
 				GraphNode node = new GraphNode();
-				node.ID = curGoTerm.ID;
-				node.properties.Add("description", curGoTerm.Name ?? "");
+				node.ID = curGoTerm.GOTerm.ID;
+				node.properties.Add("description", curGoTerm.GOTerm.Name ?? "");
 
 				// string[] props = { "value", "LogSize", "PC_1", "PC_2", "dispensability", "uniqueness" };
-				if (!double.IsNaN(oProperties.Value))
+				if (!double.IsNaN(curGoTerm.Value))
 				{
-					node.properties.Add("value", oProperties.Value);
+					node.properties.Add("value", curGoTerm.Value);
 				}
 				else
 				{
 					node.properties.Add("value", 0.0);
 				}
 
-				if (!double.IsNaN(oProperties.LogAnnotationSize))
+				if (!double.IsNaN(curGoTerm.LogAnnotationSize))
 				{
-					node.properties.Add("LogSize", oProperties.LogAnnotationSize);
+					node.properties.Add("LogSize", curGoTerm.LogAnnotationSize);
 				}
 				else
 				{
 					node.properties.Add("LogSize", 0.0);
 				}
 
-				if (oProperties.PC.Count > 0 && !double.IsNaN(oProperties.PC[0]))
+				if (curGoTerm.PC.Count > 0 && !double.IsNaN(curGoTerm.PC[0]))
 				{
-					node.properties.Add("PC_1", oProperties.PC[0]);
+					node.properties.Add("PC_1", curGoTerm.PC[0]);
 				}
 				else
 				{
 					node.properties.Add("PC_1", 0.0);
 				}
 
-				if (oProperties.PC.Count > 1 && !double.IsNaN(oProperties.PC[1]))
+				if (curGoTerm.PC.Count > 1 && !double.IsNaN(curGoTerm.PC[1]))
 				{
-					node.properties.Add("PC_2", oProperties.PC[1]);
+					node.properties.Add("PC_2", curGoTerm.PC[1]);
 				}
 				else
 				{
 					node.properties.Add("PC_2", 0.0);
 				}
 
-				if (!double.IsNaN(oProperties.Dispensability))
+				if (!double.IsNaN(curGoTerm.Dispensability))
 				{
-					node.properties.Add("dispensability", oProperties.Dispensability);
+					node.properties.Add("dispensability", curGoTerm.Dispensability);
 				}
 				else
 				{
 					node.properties.Add("dispensability", 0.0);
 				}
 
-				if (!double.IsNaN(oProperties.Uniqueness))
+				if (!double.IsNaN(curGoTerm.Uniqueness))
 				{
-					node.properties.Add("uniqueness", oProperties.Uniqueness);
+					node.properties.Add("uniqueness", curGoTerm.Uniqueness);
 				}
 				else
 				{

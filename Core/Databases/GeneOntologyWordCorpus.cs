@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using IRB.Collections.Generic;
 using IRB.Revigo.Core;
 
-namespace IRB.Revigo.Databases
+namespace IRB.Revigo.Core.Databases
 {
 	/// <summary>
 	/// A class that holds Word Annotations from Gene Ontology
@@ -33,9 +33,9 @@ namespace IRB.Revigo.Databases
 	/// 	ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	/// </summary>
 	[Serializable]
-	public class GOTermWordCorpus : BDictionary<string, double>
+	public class GeneOntologyWordCorpus : BDictionary<string, double>
 	{
-		private static BHashSet<string> stopwords = new BHashSet<string>(new string[] {
+		private static BHashSet<string> aIgnoreWords = new BHashSet<string>(new string[] {
 		"a", "the", "for", "and", "or", "in", "to", "an", "as", "at",
 		"about", "by", "be", "is", "it", "how", "of", "on", "that", "this",
 		"was", "what", "when", "where", "who", "will", "with", "during", "it",
@@ -61,32 +61,32 @@ namespace IRB.Revigo.Databases
 		"whereas", "suitable", "comprises", "whose", "necessarily",
 		"exist", "included", "classed", "especially", "highly", "resulting"});
 
-		public GOTermWordCorpus()
+		public GeneOntologyWordCorpus()
 		{ }
 
 		/// <summary>
 		/// A GoTermWordCorpus may be created from a SpeciesAnnotations object.
 		/// </summary>
 		/// <param name="annotations"></param>
-		/// <param name="myGo"></param>
-		public GOTermWordCorpus(SpeciesAnnotations annotations, GeneOntology myGo)
+		/// <param name="ontology"></param>
+		public GeneOntologyWordCorpus(SpeciesAnnotations annotations, GeneOntology ontology)
 		{
 			int sumOfSizes = 0;
 			foreach (int termId in annotations.Annotations.Keys)
 			{
-				sumOfSizes += annotations.GetTermSize(termId, myGo);
+				sumOfSizes += annotations.GetTermSize(termId, ontology);
 			}
 
 			foreach (int termId in annotations.Annotations.Keys)
 			{
 				// do not consider terms inapplicable to this organism
 				// or terms with poor annotation coverage
-				if (annotations.GetTermSize(termId, myGo) < Math.Min(2, sumOfSizes / 100000))
+				if (annotations.GetTermSize(termId, ontology) < Math.Min(2, sumOfSizes / 100000))
 				{
 					continue;
 				}
 
-				GOTerm term = myGo.Terms.GetValueByKey(termId);
+				GeneOntologyTerm term = ontology.Terms.GetValueByKey(termId);
 
 				foreach (string keyword in term.Keywords)
 				{
@@ -101,20 +101,20 @@ namespace IRB.Revigo.Databases
 				}
 			}
 
-			removeStopWords();
-			normalizeWordFreqs();
+			RemoveIgnoreWords();
+			NormalizeWordFrequencies();
 		}
 
 		/// <summary>
 		/// A GoTermWordCorpus may be created from a collection of GO terms.
 		/// </summary>
-		/// <param name="goTerms"></param>
-		/// <param name="myGo"></param>
-		public GOTermWordCorpus(ICollection<GOTerm> goTerms, GeneOntology myGo)
+		/// <param name="terms"></param>
+		/// <param name="ontology"></param>
+		public GeneOntologyWordCorpus(ICollection<GeneOntologyTerm> terms, GeneOntology ontology)
 		{
 			BHashSet<int> termsWithParents = new BHashSet<int>();
 
-			foreach (GOTerm term in goTerms)
+			foreach (GeneOntologyTerm term in terms)
 			{
 				termsWithParents.Add(term.ID);
 				foreach (int termID in term.AllParentIDs)
@@ -126,7 +126,7 @@ namespace IRB.Revigo.Databases
 			foreach (int termID in termsWithParents)
 			{
 				BHashSet<string> wordSet = new BHashSet<string>();
-				foreach (string key in myGo.Terms.GetValueByKey(termID).Keywords)
+				foreach (string key in ontology.Terms.GetValueByKey(termID).Keywords)
 				{
 					wordSet.Add(key);
 				}
@@ -144,8 +144,8 @@ namespace IRB.Revigo.Databases
 				}
 			}
 
-			removeStopWords();
-			normalizeWordFreqs();
+			RemoveIgnoreWords();
+			NormalizeWordFrequencies();
 		}
 
 		/// <summary>
@@ -160,23 +160,20 @@ namespace IRB.Revigo.Databases
 		/// The measure is =2*AUC and therefore varies from 0.0 (anticorrelated) over
 		/// 1.0 (no correlation) to 2.0 (correlated).
 		/// </summary>
-		/// <param name="goTerms"></param>
+		/// <param name="terms"></param>
 		/// <param name="termProps"></param>
-		/// <param name="go"></param>
-		public GOTermWordCorpus(ICollection<GOTerm> goTerms, BDictionary<int, GOTermProperties> termProps, GeneOntology go)
+		/// <param name="ontology"></param>
+		public GeneOntologyWordCorpus(ICollection<RevigoTerm> terms, GeneOntology ontology)
 		{
 			// first, copy the data to a LinkedHashMap, we need the predictable
 			// iteration order 
-			BDictionary<GOTerm, double> lhm = new BDictionary<GOTerm,double>();
-			BHashSet<int> oIDs = new BHashSet<int>();
+			BDictionary<RevigoTerm, double> lhm = new BDictionary<RevigoTerm, double>();
 
-			foreach (GOTerm term in goTerms)
+			foreach (RevigoTerm term in terms)
 			{
-				double dTransformedValue = termProps.GetValueByKey(term.ID).TransformedValue;
-				if (!double.IsNaN(dTransformedValue))
+				if (!double.IsNaN(term.TransformedValue))
 				{
-					lhm.Add(term, dTransformedValue);
-					oIDs.Add(term.ID);
+					lhm.Add(term, term.TransformedValue);
 				}
 			}
 
@@ -196,10 +193,10 @@ namespace IRB.Revigo.Databases
 
 			for (int j = 0; j < sortedIndices.Length; j++)
 			{
-				GOTerm term = lhm[sortedIndices[j]].Key;
+				RevigoTerm term = lhm[sortedIndices[j]].Key;
 				int iRankToAdd = j + 1;
 
-				foreach (string word in term.Keywords)
+				foreach (string word in term.GOTerm.Keywords)
 				{
 					if (!countOf1s.ContainsKey(word))
 						countOf1s.Add(word, 1);
@@ -225,7 +222,7 @@ namespace IRB.Revigo.Databases
 				this[i] = new BKeyValuePair<string,double>(word, 2.0 * auc);
 			}
 
-			removeStopWords();
+			RemoveIgnoreWords();
 		}
 
 		/// <summary>
@@ -241,17 +238,12 @@ namespace IRB.Revigo.Databases
 				return 0.0;
 		}
 
-		public BDictionary<string, double>.KeyCollection getAllWords()
-		{
-			return this.Keys;
-		}
-
-		private void removeStopWords()
+		private void RemoveIgnoreWords()
 		{
 			for (int i = 0; i < this.Count; i++)
 			{
 				string word = this[i].Key;
-				if (word.Length < 2 || stopwords.Contains(word))
+				if (word.Length < 2 || aIgnoreWords.Contains(word))
 				{
 					this.RemoveAt(i);
 					i--;
@@ -262,7 +254,7 @@ namespace IRB.Revigo.Databases
 		/// <summary>
 		/// Normalizes by dividing with average frequency.
 		/// </summary>
-		private void normalizeWordFreqs()
+		private void NormalizeWordFrequencies()
 		{
 			double sum = 0.0;
 			foreach (string word in this.Keys)
@@ -284,7 +276,7 @@ namespace IRB.Revigo.Databases
 		/// <param name="numFromBottom"></param>
 		/// <returns></returns>
 		public BDictionary<string, double> calculateWordEnrichment(
-				GOTermWordCorpus baselineWordCorpus,
+				GeneOntologyWordCorpus baselineWordCorpus,
 				int numFromTop, int numFromBottom)
 		{
 			BDictionary<string, double> result = new BDictionary<string, double>(
