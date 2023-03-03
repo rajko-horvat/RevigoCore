@@ -8,7 +8,7 @@ namespace IRB.Collections.Generic.Trees
 	/// The class that holds Key-Index pair for BTree algorithm
 	/// 
 	/// Authors:
-	/// 	Rajko Horvat (rhorvat at irb.hr)
+	/// 	Rajko Horvat (https://github.com/rajko-horvat)
 	/// 
 	/// License:
 	/// 	MIT
@@ -83,7 +83,7 @@ namespace IRB.Collections.Generic.Trees
 	/// An implementation of BTree algorithm
 	/// 
 	/// Authors:
-	///		Rajko Horvat (rhorvat at irb.hr)
+	///		Rajko Horvat (https://github.com/rajko-horvat)
 	/// 
 	/// License:
 	///		MIT

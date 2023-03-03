@@ -9,7 +9,7 @@ namespace IRB.Collections.Generic
 	/// Implementation of serializable Dictionary class which uses BTree indexing implementation
 	/// 
 	/// Authors:
-	/// 	Rajko Horvat (rhorvat at irb.hr)
+	/// 	Rajko Horvat (https://github.com/rajko-horvat)
 	/// 
 	/// License:
 	/// 	MIT

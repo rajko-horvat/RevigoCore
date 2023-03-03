@@ -7,7 +7,7 @@ namespace IRB.Revigo.Core.MDS
 	/// 
 	/// Authors:
 	/// 	Unknown Author (Java)
-	/// 	Rajko Horvat (C#, rhorvat at irb.hr)
+	/// 	Rajko Horvat (C#, https://github.com/rajko-horvat)
 	/// 
 	/// License:
 	/// 	MIT

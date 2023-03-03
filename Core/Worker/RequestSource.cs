@@ -8,7 +8,7 @@ namespace IRB.Revigo.Core.Worker
 	/// <summary>
 	/// 
 	/// Authors:
-	/// 	Rajko Horvat (rhorvat at irb.hr)
+	/// 	Rajko Horvat (https://github.com/rajko-horvat)
 	/// 
 	/// License:
 	/// 	MIT

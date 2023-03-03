@@ -13,8 +13,8 @@ namespace IRB.Revigo.Core.Databases
 	/// A class representing the Gene Ontology.
 	/// 
 	/// Authors:
-	/// 	Fran Supek (fsupek at irb.hr)
-	/// 	Rajko Horvat (rhorvat at irb.hr)
+	/// 	Fran Supek (https://github.com/FranSupek)
+	/// 	Rajko Horvat (https://github.com/rajko-horvat)
 	/// 
 	/// License:
 	/// 	MIT
@@ -218,8 +218,20 @@ namespace IRB.Revigo.Core.Databases
 						case "namespace":
 							if (oCurrentTerm != null && oCurrentTerm.Namespace == GeneOntologyNamespaceEnum.None)
 							{
-								oCurrentTerm.Namespace = (GeneOntologyNamespaceEnum)Enum.Parse(typeof(GeneOntologyNamespaceEnum),
-									sItemValue, true);
+								switch (sItemValue.ToLower())
+								{
+									case "biological_process":
+										oCurrentTerm.Namespace = GeneOntologyNamespaceEnum.BiologicalProcess;
+										break;
+									case "molecular_function":
+										oCurrentTerm.Namespace = GeneOntologyNamespaceEnum.MolecularFunction;
+										break;
+									case "cellular_component":
+										oCurrentTerm.Namespace = GeneOntologyNamespaceEnum.CellularComponent;
+										break;
+									default:
+										throw new Exception($"Unknown namespace '{sItemValue}' specified in Gene Ontology database");
+								}
 							}
 							break;
 						case "def":
@@ -415,8 +427,20 @@ namespace IRB.Revigo.Core.Databases
 								case "namespace":
 									if (oCurrentTerm != null && oCurrentTerm.Namespace == GeneOntologyNamespaceEnum.None)
 									{
-										oCurrentTerm.Namespace = (GeneOntologyNamespaceEnum)Enum.Parse(typeof(GeneOntologyNamespaceEnum),
-											sTagValue, true);
+										switch (sTagValue.ToLower())
+										{
+											case "biological_process":
+												oCurrentTerm.Namespace = GeneOntologyNamespaceEnum.BiologicalProcess;
+												break;
+											case "molecular_function":
+												oCurrentTerm.Namespace = GeneOntologyNamespaceEnum.MolecularFunction;
+												break;
+											case "cellular_component":
+												oCurrentTerm.Namespace = GeneOntologyNamespaceEnum.CellularComponent;
+												break;
+											default:
+												throw new Exception($"Unknown namespace '{sTagValue}' specified in Gene Ontology database");
+										}
 									}
 									break;
 								case "defstr":
@@ -707,18 +731,19 @@ namespace IRB.Revigo.Core.Databases
 			get { return this.aTerms; }
 		}
 
-		public static string NamespaceToFriendlyString(GeneOntologyNamespaceEnum name)
+		public static string NamespaceToFriendlyString(GeneOntologyNamespaceEnum goNamespace)
 		{
-			string friendlyName = name.ToString().Replace('_', ' ').Trim().ToLower();
-			int iPos = 0;
-			friendlyName = friendlyName.Substring(0, 1).ToUpper() + friendlyName.Substring(1);
-
-			while (iPos < friendlyName.Length && (iPos = friendlyName.IndexOf(' ', iPos + 1)) >= 0)
+			switch (goNamespace)
 			{
-				friendlyName = friendlyName.Substring(0, iPos + 1) + friendlyName.Substring(iPos + 1, 1).ToUpper() + friendlyName.Substring(iPos + 2);
+				case GeneOntologyNamespaceEnum.BiologicalProcess:
+					return "Biological process";
+				case GeneOntologyNamespaceEnum.MolecularFunction:
+					return "Molecular function";
+				case GeneOntologyNamespaceEnum.CellularComponent:
+					return "Cellular component";
+				default:
+					return "Undefined";
 			}
-
-			return friendlyName;
 		}
 
 		/// <summary>

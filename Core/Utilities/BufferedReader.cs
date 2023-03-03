@@ -6,7 +6,7 @@ using System.Text;
 /// The class that adds a buffering layer to read operations on FileStream
 /// 
 /// Authors:
-/// 	Rajko Horvat (rhorvat at irb.hr)
+/// 	Rajko Horvat (https://github.com/rajko-horvat)
 /// 
 /// License:
 /// 	MIT

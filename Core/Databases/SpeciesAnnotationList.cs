@@ -15,8 +15,8 @@ namespace IRB.Revigo.Core.Databases
 	/// This class is parallelized when constructing new species annotations.
 	/// 
 	/// Authors:
-	/// 	Fran Supek (fsupek at irb.hr)
-	/// 	Rajko Horvat (rhorvat at irb.hr)
+	/// 	Fran Supek (https://github.com/FranSupek)
+	/// 	Rajko Horvat (https://github.com/rajko-horvat)
 	/// 
 	/// License:
 	/// 	MIT

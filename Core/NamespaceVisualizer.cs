@@ -31,8 +31,8 @@ namespace IRB.Revigo.Core
 	/// distance to all other terms in list is kept.)
 	/// 
 	/// Authors:
-	/// 	Fran Supek (fsupek at irb.hr)
-	/// 	Rajko Horvat (rhorvat at irb.hr)
+	/// 	Fran Supek (https://github.com/FranSupek)
+	/// 	Rajko Horvat (https://github.com/rajko-horvat)
 	/// 
 	/// License:
 	/// 	MIT
@@ -87,7 +87,7 @@ namespace IRB.Revigo.Core
 		private double dProgressSlice = 0.0;
 
 		// events
-		private ProgressEventHandler OnProgress = delegate { };
+		private event ProgressEventHandler OnProgress = delegate { };
 
 		protected NamespaceVisualizer()
 		{
@@ -107,11 +107,11 @@ namespace IRB.Revigo.Core
 		/// header in output arff files, and in reporting of errors. Optional.</param>
 		/// <param name="orgsInTotal">I don't remember what this was for; it isn't used for
 		/// any calculations, it is just output as-is to Weka Instances.</param>
-		public NamespaceVisualizer(RevigoWorker parent, GeneOntologyNamespaceEnum geneOntologyNamespace, ICollection<RevigoTerm> terms,
-			CancellationTokenSource token, ProgressEventHandler progressHandler)
+		public NamespaceVisualizer(RevigoWorker parent, GeneOntologyNamespaceEnum goNamespace, ICollection<RevigoTerm> terms,
+			CancellationToken token, ProgressEventHandler progressHandler)
 		{
 			this.oParent = parent;
-			this.eNamespace = geneOntologyNamespace;
+			this.eNamespace = goNamespace;
 			this.OnProgress = progressHandler;
 			this.aTerms = new RevigoTermCollection(terms);
 			this.aTerms.Sort();
@@ -183,7 +183,7 @@ namespace IRB.Revigo.Core
 			}
 		}
 
-		private void ConstructMatrix(CancellationTokenSource token)
+		private void ConstructMatrix(CancellationToken token)
 		{
 			if (this.oParent == null)
 				return;
@@ -195,7 +195,7 @@ namespace IRB.Revigo.Core
 				this.OnProgress(this, new ProgressEventArgs(0.0, "Constructing similarity matrix"));
 
 			RevigoWorker oWorker = this.oParent;
-			this.oMatrix = new SemanticSimilarityMatrix(oWorker.SemanticSimilarity, oWorker.Ontology, oWorker.Annotations, this.aTerms,
+			this.oMatrix = new SemanticSimilarityMatrix(oWorker.Ontology, oWorker.Annotations, this.aTerms, oWorker.SemanticSimilarity,
 				token, myMatrix_OnProgress);
 		}
 
@@ -217,7 +217,7 @@ namespace IRB.Revigo.Core
 		/// </ul>
 		/// </summary>
 		/// <returns>True if MDS error was encountered</returns>
-		private void MakeOntologram(CancellationTokenSource token)
+		private void MakeOntologram(CancellationToken token)
 		{
 			if (this.oParent == null)
 				return;
@@ -239,18 +239,11 @@ namespace IRB.Revigo.Core
 				this.OnProgress(this, new ProgressEventArgs(this.dProgressPos, "Trimming huge term lists"));
 			this.TrimHugeTermLists();*/
 
-			// Calculate term uniqueness
-			this.dProgressPos = 20.0;
-			this.dProgressSlice = 10.0;
-			if (this.OnProgress != null)
-				this.OnProgress(this, new ProgressEventArgs(this.dProgressPos, "Calculating term uniqueness"));
-			this.oMatrix.CalculateUniqueness(token);
-
 			// Mark dispensable terms
 			// This step adds/alters properties of GO Terms in the TermSimilarityMatrix
 			// Properties changed: "dispensability", "dispensedBy"
-			this.dProgressPos = 30.0;
-			this.dProgressSlice = 50.0;
+			this.dProgressPos = 20.0;
+			this.dProgressSlice = 60.0;
 			if (this.OnProgress != null)
 				this.OnProgress(this, new ProgressEventArgs(this.dProgressPos, "Building dispensable term list"));
 			this.BuildDispensableTermList(oRnd, token);
@@ -356,7 +349,7 @@ namespace IRB.Revigo.Core
 		/// at random).
 		/// </summary>
 		/// <param name="rnd"></param>
-		private void BuildDispensableTermList(RandomMT19937 rnd, CancellationTokenSource token)
+		private void BuildDispensableTermList(RandomMT19937 rnd, CancellationToken token)
 		{
 			if (this.oParent == null || this.oMatrix == null)
 				return;
@@ -605,7 +598,7 @@ namespace IRB.Revigo.Core
 			}
 		}
 
-		private bool DoMDS(CancellationTokenSource token)
+		private bool DoMDS(CancellationToken token)
 		{
 			if (this.oParent == null || this.oMatrix == null)
 				return false;
@@ -827,7 +820,7 @@ namespace IRB.Revigo.Core
 			return bError;
 		}
 
-		private void MakeSimpleThresholdOntolograph(double similarityThreshold, CancellationTokenSource token)
+		private void MakeSimpleThresholdOntolograph(double similarityThreshold, CancellationToken token)
 		{
 			if (this.oParent == null)
 				return;

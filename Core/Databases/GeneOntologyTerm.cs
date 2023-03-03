@@ -17,8 +17,8 @@ namespace IRB.Revigo.Core.Databases
 	/// The GeneOntologyTerm may have zero, one or many parent nodes.
 	/// 
 	/// Authors:
-	/// 	Fran Supek (fsupek at irb.hr)
-	/// 	Rajko Horvat (rhorvat at irb.hr)
+	/// 	Fran Supek (https://github.com/FranSupek)
+	/// 	Rajko Horvat (https://github.com/rajko-horvat)
 	/// 
 	/// License:
 	/// 	MIT

@@ -14,8 +14,8 @@ namespace IRB.Revigo.Core.Worker
 	/// <summary>
 	/// 
 	/// Authors:
-	/// 	Fran Supek (fsupek at irb.hr)
-	/// 	Rajko Horvat (rhorvat at irb.hr)
+	/// 	Fran Supek (https://github.com/FranSupek)
+	/// 	Rajko Horvat (https://github.com/rajko-horvat)
 	/// 
 	/// License:
 	/// 	MIT
@@ -90,6 +90,8 @@ namespace IRB.Revigo.Core.Worker
 		private RevigoTermCollection oBPTerms = new RevigoTermCollection();
 		private RevigoTermCollection oMFTerms = new RevigoTermCollection();
 		private RevigoTermCollection oCCTerms = new RevigoTermCollection();
+
+		// results
 		private BDictionary<string, double> oEnrichments = new BDictionary<string, double>();
 		private BDictionary<string, double> oCorrelations = new BDictionary<string, double>();
 		private NamespaceVisualizer oBPVisualizer = NamespaceVisualizer.Empty;
@@ -103,13 +105,7 @@ namespace IRB.Revigo.Core.Worker
 
 		private CancellationTokenSource oToken = new CancellationTokenSource();
 
-		public RevigoWorker(GeneOntology ontology, SpeciesAnnotations? annotations, TimeSpan timeout, RequestSourceEnum requestSource,
-			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityTypeEnum similarity, bool removeObsolete) :
-			this(-1, ontology, annotations, timeout, requestSource, data, cutOff, valueType, similarity, removeObsolete)
-		{
-		}
-
-		public RevigoWorker(int jobID, GeneOntology ontology, SpeciesAnnotations? annotations, TimeSpan timeout, RequestSourceEnum requestSource,
+		public RevigoWorker(int jobID, GeneOntology ontology, SpeciesAnnotations annotations, TimeSpan timeout, RequestSourceEnum requestSource,
 			string data, double cutOff, ValueTypeEnum valueType, SemanticSimilarityTypeEnum similarity, bool removeObsolete)
 		{
 			if (annotations == null)
@@ -379,14 +375,6 @@ namespace IRB.Revigo.Core.Worker
 			}
 		}
 
-		public bool HasBPVisualizer
-		{
-			get
-			{
-				return !this.oBPVisualizer.IsEmpty;
-			}
-		}
-
 		public NamespaceVisualizer BPVisualizer
 		{
 			get
@@ -395,27 +383,11 @@ namespace IRB.Revigo.Core.Worker
 			}
 		}
 
-		public bool HasMFVisualizer
-		{
-			get
-			{
-				return !this.oMFVisualizer.IsEmpty;
-			}
-		}
-
 		public NamespaceVisualizer MFVisualizer
 		{
 			get
 			{
 				return this.oMFVisualizer;
-			}
-		}
-
-		public bool HasCCVisualizer
-		{
-			get
-			{
-				return !this.oCCVisualizer.IsEmpty;
 			}
 		}
 
@@ -508,7 +480,7 @@ namespace IRB.Revigo.Core.Worker
 
 				switch (term.Namespace)
 				{
-					case GeneOntologyNamespaceEnum.BIOLOGICAL_PROCESS:
+					case GeneOntologyNamespaceEnum.BiologicalProcess:
 						nsTerm = this.oBPTerms.Find(termID);
 						if (nsTerm != null)
 						{
@@ -531,7 +503,7 @@ namespace IRB.Revigo.Core.Worker
 							this.bRecalculateBP = true;
 						}
 						break;
-					case GeneOntologyNamespaceEnum.CELLULAR_COMPONENT:
+					case GeneOntologyNamespaceEnum.CellularComponent:
 						nsTerm = this.oCCTerms.Find(termID);
 						if (nsTerm != null)
 						{
@@ -554,7 +526,7 @@ namespace IRB.Revigo.Core.Worker
 							this.bRecalculateCC = true;
 						}
 						break;
-					case GeneOntologyNamespaceEnum.MOLECULAR_FUNCTION:
+					case GeneOntologyNamespaceEnum.MolecularFunction:
 						nsTerm = this.oMFTerms.Find(termID);
 						if (nsTerm != null)
 						{
@@ -653,9 +625,9 @@ namespace IRB.Revigo.Core.Worker
 					BHashSet<RevigoTerm> aDuplicateTerms = new BHashSet<RevigoTerm>();
 					BHashSet<RevigoTerm> aObsoleteTerms = new BHashSet<RevigoTerm>();
 
-					this.iTermsWithValuesCount = 0;           // a check to see if user provided values for only some (but not all) of the terms
+					this.iTermsWithValuesCount = 0;		// a check to see if user provided values for only some (but not all) of the terms
 					this.iMinNumColsPerGoTerm = int.MaxValue;
-					int termsWithNonSigPvalsCount = 0;    // any p-value (or FDR, for that matter) >0.50 is surely non-significant and will not be processed at all
+					int termsWithNonSigPvalsCount = 0;	// any p-value (or FDR, for that matter) >0.50 is surely non-significant and will not be processed at all
 
 					this.sProgressText = "Parsing data";
 					this.dProgress = this.dProgressPos = 0.0;
@@ -881,13 +853,13 @@ namespace IRB.Revigo.Core.Worker
 						// And finally add term to appropriate namespace and to a common namespace
 						switch (oTerm.GOTerm.Namespace)
 						{
-							case GeneOntologyNamespaceEnum.BIOLOGICAL_PROCESS:
+							case GeneOntologyNamespaceEnum.BiologicalProcess:
 								this.oBPTerms.Add(oTerm);
 								break;
-							case GeneOntologyNamespaceEnum.MOLECULAR_FUNCTION:
+							case GeneOntologyNamespaceEnum.MolecularFunction:
 								this.oMFTerms.Add(oTerm);
 								break;
-							case GeneOntologyNamespaceEnum.CELLULAR_COMPONENT:
+							case GeneOntologyNamespaceEnum.CellularComponent:
 								this.oCCTerms.Add(oTerm);
 								break;
 						}
@@ -910,7 +882,7 @@ namespace IRB.Revigo.Core.Worker
 					if (this.oBPTerms.Count > NamespaceVisualizer.MaxAllowedGOListSize)
 					{
 						this.aErrors.Add(string.Format(sHugeListTemplate, this.oBPTerms.Count,
-							GeneOntology.NamespaceToFriendlyString(GeneOntologyNamespaceEnum.BIOLOGICAL_PROCESS),
+							GeneOntology.NamespaceToFriendlyString(GeneOntologyNamespaceEnum.BiologicalProcess),
 							NamespaceVisualizer.MaxAllowedGOListSize));
 
 						return;
@@ -918,14 +890,14 @@ namespace IRB.Revigo.Core.Worker
 					if (this.oMFTerms.Count > NamespaceVisualizer.MaxAllowedGOListSize)
 					{
 						this.aErrors.Add(string.Format(sHugeListTemplate, this.oMFTerms.Count,
-							GeneOntology.NamespaceToFriendlyString(GeneOntologyNamespaceEnum.MOLECULAR_FUNCTION), NamespaceVisualizer.MaxAllowedGOListSize));
+							GeneOntology.NamespaceToFriendlyString(GeneOntologyNamespaceEnum.MolecularFunction), NamespaceVisualizer.MaxAllowedGOListSize));
 
 						return;
 					}
 					if (this.oCCTerms.Count > NamespaceVisualizer.MaxAllowedGOListSize)
 					{
 						this.aErrors.Add(string.Format(sHugeListTemplate, this.oCCTerms.Count,
-							GeneOntology.NamespaceToFriendlyString(GeneOntologyNamespaceEnum.CELLULAR_COMPONENT),
+							GeneOntology.NamespaceToFriendlyString(GeneOntologyNamespaceEnum.CellularComponent),
 							NamespaceVisualizer.MaxAllowedGOListSize));
 
 						return;
@@ -956,9 +928,9 @@ namespace IRB.Revigo.Core.Worker
 
 				if (this.bRecalculateBP)
 				{
-					this.eCurrentNamespace = GeneOntologyNamespaceEnum.BIOLOGICAL_PROCESS;
-					this.oBPVisualizer = new NamespaceVisualizer(this, GeneOntologyNamespaceEnum.BIOLOGICAL_PROCESS, this.oBPTerms,
-						this.oToken, Visualizer_OnProgress);
+					this.eCurrentNamespace = GeneOntologyNamespaceEnum.BiologicalProcess;
+					this.oBPVisualizer = new NamespaceVisualizer(this, GeneOntologyNamespaceEnum.BiologicalProcess, this.oBPTerms,
+						this.oToken.Token, Visualizer_OnProgress);
 
 					if (this.oToken.IsCancellationRequested)
 					{
@@ -1002,9 +974,9 @@ namespace IRB.Revigo.Core.Worker
 
 				if (this.bRecalculateCC)
 				{
-					this.eCurrentNamespace = GeneOntologyNamespaceEnum.CELLULAR_COMPONENT;
-					this.oCCVisualizer = new NamespaceVisualizer(this, GeneOntologyNamespaceEnum.CELLULAR_COMPONENT, this.oCCTerms,
-						this.oToken, Visualizer_OnProgress);
+					this.eCurrentNamespace = GeneOntologyNamespaceEnum.CellularComponent;
+					this.oCCVisualizer = new NamespaceVisualizer(this, GeneOntologyNamespaceEnum.CellularComponent, this.oCCTerms,
+						this.oToken.Token, Visualizer_OnProgress);
 
 					if (this.oToken.IsCancellationRequested)
 					{
@@ -1048,9 +1020,9 @@ namespace IRB.Revigo.Core.Worker
 
 				if (this.bRecalculateMF)
 				{
-					this.eCurrentNamespace = GeneOntologyNamespaceEnum.MOLECULAR_FUNCTION;
-					this.oMFVisualizer = new NamespaceVisualizer(this, GeneOntologyNamespaceEnum.MOLECULAR_FUNCTION, this.oMFTerms.ToArray(),
-						this.oToken, Visualizer_OnProgress);
+					this.eCurrentNamespace = GeneOntologyNamespaceEnum.MolecularFunction;
+					this.oMFVisualizer = new NamespaceVisualizer(this, GeneOntologyNamespaceEnum.MolecularFunction, this.oMFTerms.ToArray(),
+						this.oToken.Token, Visualizer_OnProgress);
 
 					if (this.oToken.IsCancellationRequested)
 					{
@@ -1096,7 +1068,7 @@ namespace IRB.Revigo.Core.Worker
 				{
 					this.dProgress = this.dProgressPos = 95.0;
 					this.dProgressSlice = 4.0;
-					this.sProgressText = "Calculating data for " + GeneOntology.NamespaceToFriendlyString(GeneOntologyNamespaceEnum.MIXED_NAMESPACE);
+					this.sProgressText = "Calculating other data";
 
 					GeneOntologyWordCorpus corpus = new GeneOntologyWordCorpus(this.oAllTerms, this.oOntology);
 					this.oEnrichments = corpus.calculateWordEnrichment(this.oAnnotations.WordCorpus, 70, 0);

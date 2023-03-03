@@ -4,7 +4,7 @@
 	/// The enum that specifies to which namespace the GO term belongs
 	/// 
 	/// Authors:
-	/// 	Rajko Horvat (rhorvat at irb.hr)
+	/// 	Rajko Horvat (https://github.com/rajko-horvat)
 	/// 
 	/// License:
 	/// 	MIT
@@ -29,9 +29,8 @@
 	public enum GeneOntologyNamespaceEnum
 	{
 		None = 0,
-		BIOLOGICAL_PROCESS = 1,
-		CELLULAR_COMPONENT = 2,
-		MOLECULAR_FUNCTION = 3,
-		MIXED_NAMESPACE = 4
+		BiologicalProcess = 1,
+		CellularComponent = 2,
+		MolecularFunction = 3
 	}
 }

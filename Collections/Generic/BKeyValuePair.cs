@@ -7,7 +7,7 @@ namespace IRB.Collections.Generic
 	/// Implementation of serializable Key-Value pair class
 	/// 
 	/// Authors:
-	/// 	Rajko Horvat (rhorvat at irb.hr)
+	/// 	Rajko Horvat (https://github.com/rajko-horvat)
 	/// 
 	/// License:
 	/// 	MIT

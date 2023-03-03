@@ -8,7 +8,7 @@ namespace IRB.Collections.Generic.Trees
 	/// A BTreeNode class for the implementation of BTree algorithm
 	/// 
 	/// Authors:
-	/// 	Rajko Horvat (rhorvat at irb.hr)
+	/// 	Rajko Horvat (https://github.com/rajko-horvat)
 	/// 
 	/// License:
 	/// 	MIT

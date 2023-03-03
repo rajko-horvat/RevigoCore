@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 /// 
 /// Authors:
 /// 	Takuji Nishimura and Makoto Matsumoto (m - mat @ math.sci.hiroshima - u.ac.jp(remove space))
-/// 	Rajko Horvat (C# version, rhorvat at irb.hr)
+/// 	Rajko Horvat (C# version, https://github.com/rajko-horvat)
 /// 
 /// License:
 /// 	MIT
