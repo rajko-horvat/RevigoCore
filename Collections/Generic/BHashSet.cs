@@ -5,7 +5,7 @@ using IRB.Collections.Generic.Trees;
 namespace IRB.Collections.Generic
 {
 	/// <summary>
-	/// Implementation of serializable HashSet class which uses BTree indexing implementation
+	/// Implementation of serializable direct replacemnt for HashSet class which uses BTree indexing implementation
 	/// 
 	/// Authors:
 	/// 	Rajko Horvat (https://github.com/rajko-horvat)
